@@ -89,12 +89,6 @@ export default function TrackPage() {
             <Link href="/" className="text-sm font-semibold text-slate-600 hover:text-blue-600">
               Apply Now
             </Link>
-            <Link
-              href="/login"
-              className="text-xs px-3 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 font-semibold"
-            >
-              Admin Portal
-            </Link>
           </div>
         </div>
       </header>

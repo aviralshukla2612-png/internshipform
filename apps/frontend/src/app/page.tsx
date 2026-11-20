@@ -428,12 +428,6 @@ export default function HomePage() {
             >
               Track Status
             </Link>
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center px-3.5 py-1.5 border border-slate-200 text-xs sm:text-sm font-semibold rounded-lg text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm"
-            >
-              Admin Portal
-            </Link>
           </nav>
         </div>
       </header>
@@ -1387,7 +1381,6 @@ export default function HomePage() {
             <div className="flex flex-col space-y-2">
               <a href="#curriculum" className="hover:text-blue-600 font-medium">Internship Program</a>
               <Link href="/track" className="hover:text-blue-600 font-medium">Application Tracking</Link>
-              <Link href="/login" className="hover:text-blue-600 font-medium">HR Management Portal</Link>
             </div>
           </div>
         </div>
