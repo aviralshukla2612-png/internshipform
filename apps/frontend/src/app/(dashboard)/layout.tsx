@@ -66,11 +66,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
         <div className="h-16 px-5 flex items-center border-b border-slate-800">
-          <img
-            src="/logo.webp"
-            alt="Emperor Smart Solutions"
-            className="w-9 h-9 rounded-lg object-contain mr-3 shrink-0 shadow-sm"
-          />
+          <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center p-1 mr-3 shrink-0 shadow-sm">
+            <img
+              src="/logo.webp"
+              alt="Emperor Smart Solutions"
+              className="w-full h-full object-contain filter drop-shadow-sm"
+            />
+          </div>
           <div className="min-w-0">
             <span className="font-bold text-white text-sm tracking-tight block truncate">
               Emperor Smart Solutions

@@ -394,11 +394,13 @@ export default function HomePage() {
       <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <img
-              src="/logo.webp"
-              alt="Emperor Smart Solutions Logo"
-              className="w-10 h-10 rounded-xl object-contain shadow-sm"
-            />
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shadow-md shrink-0">
+              <img
+                src="/logo.webp"
+                alt="Emperor Smart Solutions Logo"
+                className="w-full h-full object-contain filter drop-shadow-sm"
+              />
+            </div>
             <div>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">
                 Emperor <span className="text-blue-600">Smart Solutions</span>
@@ -1351,12 +1353,14 @@ export default function HomePage() {
       <footer className="border-t bg-white py-10 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <img
-                src="/logo.webp"
-                alt="Emperor Smart Solutions"
-                className="w-7 h-7 object-contain"
-              />
+            <div className="flex items-center gap-2.5 mb-2">
+              <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1 shadow-sm shrink-0">
+                <img
+                  src="/logo.webp"
+                  alt="Emperor Smart Solutions"
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <span className="font-bold text-sm text-slate-900">Emperor Smart Solutions</span>
             </div>
             <p className="text-slate-500 text-xs leading-relaxed">

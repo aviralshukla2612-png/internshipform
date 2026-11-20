@@ -7,9 +7,12 @@ export const metadata: Metadata = {
   description:
     "Official Internship Application & HR Management Portal for Emperor Smart Solutions. Accelerate your tech career with real-world industry engineering.",
   icons: {
-    icon: "/logo.webp",
-    shortcut: "/logo.webp",
-    apple: "/logo.webp",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/logo.webp", type: "image/webp" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 };
 

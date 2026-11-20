@@ -71,11 +71,13 @@ export default function TrackPage() {
       <header className="border-b bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-3">
-            <img
-              src="/logo.webp"
-              alt="Emperor Smart Solutions"
-              className="w-10 h-10 rounded-xl object-contain shadow-sm"
-            />
+            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shadow-md shrink-0">
+              <img
+                src="/logo.webp"
+                alt="Emperor Smart Solutions"
+                className="w-full h-full object-contain filter drop-shadow-sm"
+              />
+            </div>
             <div>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">
                 Emperor <span className="text-blue-600">Smart Solutions</span>
