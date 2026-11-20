@@ -29,4 +29,4 @@ RUN mkdir -p /app/uploads && chmod 777 /app/uploads
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "pnpm db:push --accept-data-loss || true ; pnpm db:seed || true ; node dist/main.js"]
+CMD ["sh", "-c", "pnpm db:push --accept-data-loss || true ; pnpm db:seed || true ; if [ -f dist/main.js ]; then node dist/main.js; else node dist/src/main.js; fi"]

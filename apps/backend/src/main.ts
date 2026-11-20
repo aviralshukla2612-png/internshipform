@@ -2,7 +2,8 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import cookieParser from 'cookie-parser';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const cookieParser = require('cookie-parser');
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
