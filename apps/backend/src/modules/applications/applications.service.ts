@@ -461,6 +461,7 @@ export class ApplicationsService {
         { candidate: { fullName: { contains: query.search, mode: 'insensitive' } } },
         { candidate: { email: { contains: query.search, mode: 'insensitive' } } },
         { candidate: { mobileNumber: { contains: query.search } } },
+        { candidate: { whatsappNumber: { contains: query.search } } },
       ];
     }
 

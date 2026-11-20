@@ -24,6 +24,7 @@ export default function ApplicationsPage() {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedGender, setSelectedGender] = useState<string>("");
@@ -36,12 +37,12 @@ export default function ApplicationsPage() {
   const [bulkReason, setBulkReason] = useState("");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["applicationsList", page, search, selectedStatus, selectedGender, isFresherFilter],
+    queryKey: ["applicationsList", page, pageSize, search, selectedStatus, selectedGender, isFresherFilter],
     queryFn: () =>
       apiClient("/applications", {
         params: {
           page,
-          limit: 15,
+          limit: pageSize,
           search: search || undefined,
           status: selectedStatus || undefined,
           gender: selectedGender || undefined,
@@ -208,20 +209,51 @@ export default function ApplicationsPage() {
           <option value={ApplicationStatus.REJECTED}>Rejected</option>
         </select>
 
-        <select
-          value={selectedGender}
-          onChange={(e) => {
-            setSelectedGender(e.target.value);
-            setPage(1);
-          }}
-          className="px-3 py-2 border rounded-lg text-xs bg-white text-slate-700 outline-none"
-        >
-          <option value="">All Genders</option>
-          <option value={Gender.MALE}>Male</option>
-          <option value={Gender.FEMALE}>Female</option>
-          <option value={Gender.OTHER}>Other</option>
-          <option value={Gender.PREFER_NOT_TO_DISCLOSE}>Prefer not to disclose</option>
-        </select>
+        {/* Gender Filter (Male / Female Only) */}
+        <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-lg border border-slate-200">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedGender("");
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+              selectedGender === ""
+                ? "bg-white text-blue-600 shadow-xs border border-slate-200"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            All Genders
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedGender(Gender.MALE);
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+              selectedGender === Gender.MALE
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Male
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedGender(Gender.FEMALE);
+              setPage(1);
+            }}
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
+              selectedGender === Gender.FEMALE
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            Female
+          </button>
+        </div>
 
         <select
           value={isFresherFilter}
@@ -375,25 +407,93 @@ export default function ApplicationsPage() {
         </div>
 
         {/* Pagination Bar */}
-        {data?.meta && data.meta.totalPages > 1 && (
-          <div className="p-4 border-t flex items-center justify-between text-xs text-slate-600">
-            <span>
-              Showing page <strong>{data.meta.page}</strong> of <strong>{data.meta.totalPages}</strong> ({data.meta.total} applications)
-            </span>
-            <div className="flex items-center gap-2">
+        {data?.meta && (
+          <div className="p-4 border-t border-slate-200 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-600">
+            <div className="flex items-center gap-4 flex-wrap">
+              <span>
+                Showing{" "}
+                <strong>
+                  {data.meta.total > 0 ? (page - 1) * pageSize + 1 : 0}
+                </strong>
+                –
+                <strong>
+                  {Math.min(page * pageSize, data.meta.total)}
+                </strong>{" "}
+                of <strong>{data.meta.total}</strong> applications
+              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500">Per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-700 outline-none"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap">
               <button
                 disabled={page <= 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1.5 border rounded-md disabled:opacity-40 flex items-center gap-1 hover:bg-slate-50"
+                onClick={() => setPage(1)}
+                className="px-2.5 py-1.5 border border-slate-300 bg-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 font-semibold"
+                title="First Page"
+              >
+                &laquo; First
+              </button>
+              <button
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 border border-slate-300 bg-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-100 font-semibold"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Prev
               </button>
+
+              {/* Page Number Badges */}
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: Math.max(1, data.meta.totalPages) }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === Math.max(1, data.meta.totalPages) || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && p - arr[idx - 1] > 1 && (
+                        <span className="px-1 text-slate-400">...</span>
+                      )}
+                      <button
+                        onClick={() => setPage(p)}
+                        className={`w-7 h-7 rounded-md font-bold text-xs transition ${
+                          page === p
+                            ? "bg-blue-600 text-white shadow-xs"
+                            : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+
               <button
-                disabled={page >= data.meta.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1.5 border rounded-md disabled:opacity-40 flex items-center gap-1 hover:bg-slate-50"
+                disabled={page >= Math.max(1, data.meta.totalPages)}
+                onClick={() => setPage((p) => Math.min(data.meta.totalPages, p + 1))}
+                className="px-3 py-1.5 border border-slate-300 bg-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 hover:bg-slate-100 font-semibold"
               >
                 Next <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                disabled={page >= Math.max(1, data.meta.totalPages)}
+                onClick={() => setPage(Math.max(1, data.meta.totalPages))}
+                className="px-2.5 py-1.5 border border-slate-300 bg-white rounded-md disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 font-semibold"
+                title="Last Page"
+              >
+                Last &raquo;
               </button>
             </div>
           </div>
