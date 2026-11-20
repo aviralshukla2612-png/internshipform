@@ -10,11 +10,11 @@ git pull origin main
 docker compose -f docker-compose.prod.yml up -d --build
 
 # 3. Wait for PostgreSQL and execute database push and initial seeding
-echo "Waiting for services to initialize..."
-sleep 5
+echo "Waiting for backend services to initialize..."
+sleep 10
 
-docker compose -f docker-compose.prod.yml exec backend pnpm db:push
-docker compose -f docker-compose.prod.yml exec backend ts-node prisma/seed.ts || true
+docker compose -f docker-compose.prod.yml exec -T backend pnpm db:push
+docker compose -f docker-compose.prod.yml exec -T backend pnpm db:seed || true
 
 echo "=== Deployment Completed Successfully! ==="
 docker compose -f docker-compose.prod.yml ps

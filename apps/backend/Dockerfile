@@ -1,8 +1,9 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install pnpm and dependencies
+# Install OpenSSL and CA certificates for Prisma and secure connections
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@12.14.0
 
 COPY package.json pnpm-workspace.yaml .npmrc* ./
@@ -25,4 +26,4 @@ RUN pnpm build
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "pnpm db:push && ts-node prisma/seed.ts ; node dist/main.js"]
+CMD ["sh", "-c", "pnpm db:push && pnpm db:seed ; node dist/main.js"]
