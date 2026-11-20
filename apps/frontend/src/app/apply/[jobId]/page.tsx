@@ -548,7 +548,7 @@ export default function ApplyPage() {
                 {/* MANDATORY GENDER SELECTION */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Gender <span className="text-red-500">* (MANDATORY)</span>
+                    Gender <span className="text-red-500">*</span>
                   </label>
                   <select
                     required
