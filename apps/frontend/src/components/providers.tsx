@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient, setStoredToken } from "@/lib/api";
 
 interface AuthUser {
   id: string;
@@ -64,7 +64,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await apiClient("/auth/logout", { method: "POST" });
+    } catch {
+      // Ignore network errors during logout
     } finally {
+      setStoredToken(null);
       setUser(null);
       window.location.href = "/login";
     }

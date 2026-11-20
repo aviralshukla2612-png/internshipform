@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { apiClient } from "@/lib/api";
+import { apiClient, uploadDocument } from "@/lib/api";
 import {
   Gender,
   EducationCategory,
@@ -149,22 +149,8 @@ export default function ApplyPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("documentType", type);
-
     try {
-      const res = await fetch("http://localhost:4000/api/v1/documents/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Upload verification failed");
-      }
-
-      const data = await res.json();
+      const data = await uploadDocument(file, type);
       onSuccess(data.storageKey, file.name);
 
       if (type === DocumentType.PROFILE_PHOTO) {

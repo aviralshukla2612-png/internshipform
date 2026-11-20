@@ -39,18 +39,53 @@ export class ApplicationsService {
       throw new BadRequestException('Gender is compulsory and must be one of the specified choices.');
     }
 
-    // 2. Validate Job Exists and is Published
-    const job = await this.prisma.jobPosition.findUnique({
-      where: { id: dto.jobId },
-    });
-    if (!job || job.status !== 'PUBLISHED') {
-      throw new BadRequestException('The selected job position is not currently open for applications.');
+    // 2. Resolve Job Position (Internship position by default)
+    let job = null;
+    if (dto.jobId) {
+      job = await this.prisma.jobPosition.findFirst({
+        where: {
+          OR: [{ id: dto.jobId }, { slug: dto.jobId }],
+          status: 'PUBLISHED',
+        },
+      });
     }
 
-    // 3. Duplicate Prevention Check (Same email or mobile for the same job position)
+    if (!job) {
+      job = await this.prisma.jobPosition.findFirst({
+        where: {
+          slug: 'internship-program',
+          status: 'PUBLISHED',
+        },
+      });
+    }
+
+    if (!job) {
+      job = await this.prisma.jobPosition.findFirst({
+        where: { status: 'PUBLISHED' },
+      });
+    }
+
+    if (!job) {
+      job = await this.prisma.jobPosition.create({
+        data: {
+          title: 'Full-Stack & AI Engineering Internship Program',
+          slug: 'internship-program',
+          department: 'Engineering & Innovation',
+          jobDescription: 'Comprehensive industry internship covering AI/ML integration, MERN/MEAN full-stack development, database architecture, and production engineering.',
+          requiredQualification: 'Pursuing or Completed Degree (B.Tech / B.E / BCA / MCA / B.Sc / Any Degree)',
+          requiredSkills: ['AI / ML', 'MERN Stack', 'MEAN Stack', 'PostgreSQL', 'Database Logic', 'Docker'],
+          openingsCount: 50,
+          jobLocation: 'Hybrid / Remote / Office',
+          employmentType: 'INTERNSHIP' as any,
+          status: 'PUBLISHED',
+        },
+      });
+    }
+
+    // 3. Duplicate Prevention Check (Same email or mobile for the same position)
     const existingApplication = await this.prisma.jobApplication.findFirst({
       where: {
-        jobPositionId: dto.jobId,
+        jobPositionId: job.id,
         candidate: {
           OR: [
             { email: dto.email.toLowerCase().trim() },
@@ -65,7 +100,7 @@ export class ApplicationsService {
 
     if (existingApplication) {
       throw new BadRequestException(
-        `An application for this position has already been submitted under email ${dto.email} or mobile ${dto.mobileNumber} (Application ID: ${existingApplication.applicationCode}).`,
+        `An application for this program has already been submitted under email ${dto.email} or mobile ${dto.mobileNumber} (Application ID: ${existingApplication.applicationCode}).`,
       );
     }
 
@@ -254,7 +289,7 @@ export class ApplicationsService {
         data: {
           applicationCode,
           candidateId: candidate.id,
-          jobPositionId: dto.jobId,
+          jobPositionId: job.id,
           status: ApplicationStatus.NEW as any,
           isFresher: dto.isFresher,
           noticePeriodDays: dto.noticePeriodDays,

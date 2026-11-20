@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { apiClient } from "@/lib/api";
+import { apiClient, setStoredToken } from "@/lib/api";
 import { useAuth } from "@/components/providers";
 import { Briefcase, Lock, Mail, ShieldAlert, Loader2 } from "lucide-react";
 
@@ -27,6 +27,9 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      if (response?.accessToken) {
+        setStoredToken(response.accessToken);
+      }
       login(response.user);
       router.push("/dashboard");
     } catch (err: any) {

@@ -59,7 +59,7 @@ export interface ExperienceEntryDto {
 }
 
 export interface CandidateApplicationSubmissionDto {
-  jobId: string;
+  jobId?: string;
   
   // Section A: Personal Information
   fullName: string;

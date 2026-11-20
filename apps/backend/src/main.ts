@@ -10,34 +10,29 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.set('trust proxy', 1);
+
   // Security Headers
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
-      contentSecurityPolicy: process.env.NODE_ENV === 'production',
+      contentSecurityPolicy: false,
     }),
   );
 
   // Cookies
   app.use(cookieParser(process.env.COOKIE_SECRET || 'recruitment-cookie-secret'));
 
-  // CORS Configuration
-  const allowedOrigins = [
-    process.env.CORS_ORIGIN || 'http://localhost:3000',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-  ];
+  // Permissive CORS Configuration for reverse proxy & subdomains
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Blocked by CORS policy'));
-      }
+      // Allow any incoming origin or no-origin (mobile/curl/proxy)
+      callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   });
 
   // Global Prefix

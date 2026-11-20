@@ -18,6 +18,7 @@ RUN pnpm --filter @recruitment/shared build
 WORKDIR /app/apps/frontend
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV NEXT_PUBLIC_API_URL=/api/v1
 RUN pnpm build
 
 EXPOSE 3000

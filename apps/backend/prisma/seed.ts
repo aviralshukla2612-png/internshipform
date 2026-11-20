@@ -217,7 +217,36 @@ async function main() {
   }
   console.log('✓ System settings initialized.');
 
-  // 6. Seed Sample Published Job Opening
+  // 6. Seed Primary Internship Program Position
+  await prisma.jobPosition.upsert({
+    where: { slug: 'internship-program' },
+    update: {
+      title: 'Full-Stack & AI Engineering Internship Program',
+      department: 'Engineering & Innovation',
+      jobDescription: 'Intensive practical industry internship covering AI/ML integration, MERN & MEAN full-stack architectures, database modeling & logic, scalable backend systems, and production cloud deployment.',
+      requiredQualification: 'Pursuing or Completed Degree (B.Tech / B.E / BCA / MCA / B.Sc / Any Degree)',
+      requiredSkills: ['AI / ML', 'MERN Stack', 'MEAN Stack', 'PostgreSQL', 'Database Logic', 'Docker'],
+      openingsCount: 50,
+      jobLocation: 'Hybrid / Remote / Office',
+      employmentType: EmploymentType.INTERNSHIP,
+      status: JobStatus.PUBLISHED,
+    },
+    create: {
+      title: 'Full-Stack & AI Engineering Internship Program',
+      slug: 'internship-program',
+      department: 'Engineering & Innovation',
+      jobDescription: 'Intensive practical industry internship covering AI/ML integration, MERN & MEAN full-stack architectures, database modeling & logic, scalable backend systems, and production cloud deployment.',
+      requiredQualification: 'Pursuing or Completed Degree (B.Tech / B.E / BCA / MCA / B.Sc / Any Degree)',
+      requiredSkills: ['AI / ML', 'MERN Stack', 'MEAN Stack', 'PostgreSQL', 'Database Logic', 'Docker'],
+      openingsCount: 50,
+      jobLocation: 'Hybrid / Remote / Office',
+      employmentType: EmploymentType.INTERNSHIP,
+      status: JobStatus.PUBLISHED,
+    },
+  });
+  console.log('✓ Primary Internship Program position seeded: internship-program');
+
+  // 7. Seed Sample Published Job Opening
   await prisma.jobPosition.upsert({
     where: { slug: 'senior-full-stack-engineer' },
     update: {},
