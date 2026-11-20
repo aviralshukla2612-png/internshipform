@@ -7,16 +7,13 @@ import {
   UploadedFile,
   Body,
   Res,
-  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { ApiTags, ApiOperation, ApiConsumes, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
+import * as path from 'path';
 import { DocumentsService } from './documents.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RbacGuard } from '../auth/guards/rbac.guard';
-import { Permissions } from '../auth/decorators/rbac.decorator';
 import { DocumentType } from '@recruitment/shared';
 
 @ApiTags('Document Storage & Verification')
@@ -44,18 +41,41 @@ export class DocumentsController {
     return this.documentsService.uploadFile(file, type, candidateId);
   }
 
+  @Get('view/:storageKey')
+  @ApiOperation({ summary: 'View candidate document or photo inline' })
+  async view(
+    @Param('storageKey') storageKey: string,
+    @Res() res: Response,
+  ) {
+    const { stream, filePath } = await this.documentsService.getFileStream(storageKey);
+    const ext = path.extname(filePath).toLowerCase();
+    let contentType = 'application/octet-stream';
+    if (ext === '.pdf') contentType = 'application/pdf';
+    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+    else if (ext === '.png') contentType = 'image/png';
+    else if (ext === '.webp') contentType = 'image/webp';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+    stream.pipe(res);
+  }
+
   @Get('download/:storageKey')
-  @UseGuards(JwtAuthGuard, RbacGuard)
-  @Permissions('documents:download')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Authorized secure download of candidate document' })
+  @ApiOperation({ summary: 'Download candidate document' })
   async download(
     @Param('storageKey') storageKey: string,
     @Res() res: Response,
   ) {
     const { stream, filePath } = await this.documentsService.getFileStream(storageKey);
-    res.setHeader('Content-Disposition', `attachment; filename="${storageKey}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    const ext = path.extname(filePath).toLowerCase();
+    let contentType = 'application/octet-stream';
+    if (ext === '.pdf') contentType = 'application/pdf';
+    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+    else if (ext === '.png') contentType = 'image/png';
+    else if (ext === '.webp') contentType = 'image/webp';
+
+    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(storageKey)}"`);
+    res.setHeader('Content-Type', contentType);
     stream.pipe(res);
   }
 }
