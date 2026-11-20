@@ -1,0 +1,674 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_DISCLOSE
+}
+
+enum EducationCategory {
+  CLASS_10
+  CLASS_12
+  DIPLOMA
+  GRADUATION
+  POST_GRADUATION
+  OTHER
+}
+
+enum GradingSystem {
+  PERCENTAGE
+  CGPA_10
+  CGPA_4
+  GRADE
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  CLOSED
+}
+
+enum ApplicationStatus {
+  NEW
+  UNDER_REVIEW
+  SHORTLISTED
+  INTERVIEW_SCHEDULED
+  INTERVIEW_IN_PROGRESS
+  ON_HOLD
+  SELECTED
+  REJECTED
+  WITHDRAWN
+}
+
+enum InterviewRoundType {
+  HR_ROUND
+  TECHNICAL_ROUND
+  MANAGERIAL_ROUND
+  FINAL_ROUND
+  CUSTOM_ROUND
+}
+
+enum InterviewMode {
+  ONLINE
+  OFFLINE
+  TELEPHONIC
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  NO_SHOW
+}
+
+enum InterviewRecommendation {
+  STRONGLY_RECOMMENDED
+  RECOMMENDED
+  HOLD
+  NOT_RECOMMENDED
+}
+
+enum DocumentType {
+  PROFILE_PHOTO
+  RESUME
+  MARKSHEET_10
+  MARKSHEET_12
+  MARKSHEET_GRADUATION
+  MARKSHEET_POST_GRADUATION
+  EXPERIENCE_CERTIFICATE
+  OTHER_CERTIFICATE
+}
+
+enum WhatsAppMessageType {
+  APPLICATION_CONFIRMATION
+  INTERVIEW_INVITATION
+  INTERVIEW_REMINDER
+  INTERVIEW_RESCHEDULE
+  INTERVIEW_CANCELLATION
+  SELECTION_NOTICE
+  REJECTION_NOTICE
+  CUSTOM
+}
+
+enum WhatsAppDeliveryStatus {
+  PENDING
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum UserRoleType {
+  SUPER_ADMIN
+  HR_ADMIN
+  INTERVIEWER
+}
+
+enum AddressType {
+  CURRENT
+  PERMANENT
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  LOCKED
+}
+
+// -------------------------------------------------------------
+// AUTHENTICATION & ACCESS CONTROL (RBAC)
+// -------------------------------------------------------------
+
+model AdminUser {
+  id                    String                  @id @default(uuid())
+  email                 String                  @unique
+  passwordHash          String
+  fullName              String
+  department            String?
+  designation           String?
+  status                UserStatus              @default(ACTIVE)
+  failedLoginAttempts   Int                     @default(0)
+  lockoutUntil          DateTime?
+  lastLoginAt           DateTime?
+  mfaSecret             String?
+  mfaEnabled            Boolean                 @default(false)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  userRoles             UserRole[]
+  sessions              UserSession[]
+  interviewAssignments InterviewerAssignment[]
+  feedbacksSubmitted    InterviewFeedback[]
+  statusChanges         ApplicationStatusHistory[]
+  candidateNotes        CandidateNote[]
+  auditLogs             AuditLog[]
+
+  @@index([email])
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        UserRoleType     @unique
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  userRoles   UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  action      String           @unique // e.g. "candidates:view", "interviews:schedule"
+  description String?
+  module      String
+  createdAt   DateTime         @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model UserRole {
+  id          String     @id @default(uuid())
+  userId      String
+  roleId      String
+  assignedAt  DateTime   @default(now())
+
+  user        AdminUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  grantedAt    DateTime   @default(now())
+
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserSession {
+  id           String     @id @default(uuid())
+  userId       String
+  sessionToken String     @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  isRevoked    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  user         AdminUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+// -------------------------------------------------------------
+// CANDIDATE PROFILE & MULTI-STEP APPLICATION DATA
+// -------------------------------------------------------------
+
+model Candidate {
+  id                    String                  @id @default(uuid())
+  applicationCode       String                  @unique // Public reference ID (e.g. APP-20261120-XXXX)
+  fullName              String
+  fatherName            String
+  motherName            String
+  dateOfBirth           DateTime
+  gender                Gender                  // MANDATORY
+  mobileNumber          String
+  whatsappNumber        String
+  email                 String
+  profilePhotoDocId     String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  addresses             CandidateAddress[]
+  educations            Education[]
+  experiences           WorkExperience[]
+  skills                CandidateSkill[]
+  certifications        CandidateCertification[]
+  documents             CandidateDocument[]
+  applications          JobApplication[]
+  consents              ConsentRecord[]
+
+  @@index([email])
+  @@index([mobileNumber])
+  @@index([applicationCode])
+}
+
+model CandidateAddress {
+  id          String      @id @default(uuid())
+  candidateId String
+  type        AddressType
+  street      String
+  city        String
+  state       String
+  pinCode     String
+  country     String      @default("India")
+  createdAt   DateTime    @default(now())
+
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model Education {
+  id                 String            @id @default(uuid())
+  candidateId        String
+  qualificationType  EducationCategory
+  degreeName         String
+  institutionName    String
+  universityOrBoard  String
+  specialization     String?
+  passingYear        Int
+  totalMarks         Float?
+  obtainedMarks      Float?
+  percentage         Float?
+  cgpa               Float?
+  gradingSystem      GradingSystem
+  marksheetDocId     String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  candidate          Candidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model WorkExperience {
+  id                     String         @id @default(uuid())
+  candidateId            String
+  companyName            String
+  companyAddress         String
+  companyWebsite         String?
+  designation            String
+  department             String
+  employmentType         EmploymentType
+  joiningDate            DateTime
+  leavingDate            DateTime?
+  currentlyWorking       Boolean        @default(false)
+  totalExperienceMonths  Int            @default(0)
+  lastDrawnSalary        Float?
+  expectedSalary         Float?
+  reasonForLeaving       String?
+  jobResponsibilities    String         @db.Text
+  hrContactInfo          String?
+  experienceCertDocId    String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  candidate              Candidate      @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CandidateSkill {
+  id          String     @id @default(uuid())
+  candidateId String
+  skillName   String
+  isTechnical Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  candidate   Candidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CandidateCertification {
+  id           String    @id @default(uuid())
+  candidateId  String
+  title        String
+  issuer       String?
+  year         Int?
+  documentId   String?
+  createdAt    DateTime  @default(now())
+
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CandidateDocument {
+  id                 String       @id @default(uuid())
+  candidateId        String
+  documentType       DocumentType
+  originalFileName   String
+  storageKey         String       @unique // UUID random file name in storage
+  mimeType           String
+  fileSizeBytes      Int
+  fileSignatureHex   String?      // Magic bytes signature
+  storageProvider    String       @default("local") // "local" | "s3" | "cloudinary"
+  isVerified         Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+
+  candidate          Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([storageKey])
+}
+
+model ConsentRecord {
+  id                            String    @id @default(uuid())
+  candidateId                   String
+  accuracyConfirmed             Boolean   @default(true)
+  recruitmentProcessingConsent  Boolean   @default(true)
+  privacyPolicyAcknowledged     Boolean   @default(true)
+  whatsappConsent               Boolean   @default(false) // Captured separately
+  ipAddress                     String?
+  userAgent                     String?
+  consentedAt                   DateTime  @default(now())
+
+  candidate                     Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+// -------------------------------------------------------------
+// JOB OPENINGS & APPLICATIONS
+// -------------------------------------------------------------
+
+model JobPosition {
+  id                  String           @id @default(uuid())
+  title               String
+  slug                String           @unique
+  department          String
+  jobDescription      String           @db.Text
+  requiredQualification String
+  requiredSkills      String[]
+  experienceMinYears  Int              @default(0)
+  experienceMaxYears  Int?
+  openingsCount       Int              @default(1)
+  jobLocation         String
+  employmentType      EmploymentType   @default(FULL_TIME)
+  salaryMin           Float?
+  salaryMax           Float?
+  applicationDeadline DateTime?
+  status              JobStatus        @default(DRAFT)
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  applications        JobApplication[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model JobApplication {
+  id                       String                     @id @default(uuid())
+  applicationCode          String                     @unique
+  candidateId              String
+  jobPositionId            String
+  status                   ApplicationStatus          @default(NEW)
+  isFresher                Boolean                    @default(false)
+  noticePeriodDays         Int                        @default(0)
+  currentEmploymentStatus  String
+  preferredLocation        String
+  expectedSalary           Float
+  availabilityDate         DateTime?
+  additionalInformation    String?                    @db.Text
+  resumeDocId              String
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
+
+  candidate                Candidate                  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobPosition              JobPosition                @relation(fields: [jobPositionId], references: [id], onDelete: Cascade)
+  statusHistory            ApplicationStatusHistory[]
+  interviews               Interview[]
+  notes                    CandidateNote[]
+  whatsAppMessages         WhatsAppMessage[]
+  emailLogs                EmailLog[]
+
+  @@index([candidateId])
+  @@index([jobPositionId])
+  @@index([status])
+  @@index([applicationCode])
+}
+
+model ApplicationStatusHistory {
+  id               String            @id @default(uuid())
+  applicationId    String
+  previousStatus   ApplicationStatus
+  newStatus        ApplicationStatus
+  changedById      String?
+  reason           String?
+  createdAt        DateTime          @default(now())
+
+  application      JobApplication    @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  changedBy        AdminUser?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([applicationId])
+}
+
+model CandidateNote {
+  id            String         @id @default(uuid())
+  applicationId String
+  authorId      String
+  note          String         @db.Text
+  isInternal    Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  author        AdminUser      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+// -------------------------------------------------------------
+// INTERVIEW SCHEDULING, CONFLICT ENGINE & FEEDBACK
+// -------------------------------------------------------------
+
+model Interview {
+  id                String                  @id @default(uuid())
+  applicationId     String
+  roundType         InterviewRoundType
+  roundOrder        Int                     @default(1)
+  interviewMode     InterviewMode
+  scheduledStart    DateTime
+  scheduledEnd      DateTime
+  durationMinutes   Int                     @default(45)
+  meetingDetails    String                  @db.Text // e.g. Google Meet link or office address
+  instructions      String?                 @db.Text
+  status            InterviewStatus         @default(SCHEDULED)
+  cancellationReason String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  application       JobApplication          @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  rounds            InterviewRound[]
+  assignments       InterviewerAssignment[]
+  feedbacks         InterviewFeedback[]
+
+  @@index([applicationId])
+  @@index([scheduledStart, scheduledEnd])
+  @@index([status])
+}
+
+model InterviewRound {
+  id          String             @id @default(uuid())
+  interviewId String
+  roundName   String
+  roundType   InterviewRoundType
+  sequence    Int
+  createdAt   DateTime           @default(now())
+
+  interview   Interview          @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+}
+
+model InterviewerAssignment {
+  id            String             @id @default(uuid())
+  interviewId   String
+  interviewerId String
+  isLead        Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+
+  interview     Interview          @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewer   AdminUser          @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+  feedback      InterviewFeedback?
+
+  @@unique([interviewId, interviewerId])
+  @@index([interviewerId])
+  @@index([interviewId])
+}
+
+model InterviewFeedback {
+  id                    String                  @id @default(uuid())
+  interviewId           String
+  assignmentId          String                  @unique
+  interviewerId         String
+  technicalRating       Int                     // 1 to 5
+  communicationRating   Int                     // 1 to 5
+  problemSolvingRating  Int                     // 1 to 5
+  experienceRating      Int                     // 1 to 5
+  overallRating         Int                     // 1 to 5
+  strengths             String                  @db.Text
+  weaknesses            String                  @db.Text
+  interviewNotes        String                  @db.Text
+  recommendation        InterviewRecommendation
+  isLocked              Boolean                 @default(true) // Immutable once submitted
+  submittedAt           DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  interview             Interview               @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  assignment            InterviewerAssignment   @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  interviewer           AdminUser               @relation(fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  @@index([interviewId])
+  @@index([interviewerId])
+}
+
+// -------------------------------------------------------------
+// NOTIFICATIONS: WHATSAPP CLOUD API & EMAIL ENGINE
+// -------------------------------------------------------------
+
+model WhatsAppMessage {
+  id                   String                 @id @default(uuid())
+  applicationId        String
+  recipientNumber      String
+  candidateName        String
+  messageType          WhatsAppMessageType
+  templateName         String
+  payloadJson          String                 @db.Text
+  metaMessageId        String?                @unique
+  deliveryStatus       WhatsAppDeliveryStatus @default(PENDING)
+  scheduledAt          DateTime?
+  sentAt               DateTime?
+  deliveredAt          DateTime?
+  readAt               DateTime?
+  failureReason        String?
+  retryCount           Int                    @default(0)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  application          JobApplication         @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  webhookEvents        WhatsAppWebhookEvent[]
+
+  @@index([applicationId])
+  @@index([metaMessageId])
+  @@index([deliveryStatus])
+}
+
+model WhatsAppWebhookEvent {
+  id                String          @id @default(uuid())
+  whatsappMessageId String?
+  metaMessageId     String?
+  eventType         String
+  rawPayload        String          @db.Text
+  receivedAt        DateTime        @default(now())
+
+  message           WhatsAppMessage? @relation(fields: [whatsappMessageId], references: [id], onDelete: SetNull)
+
+  @@index([metaMessageId])
+  @@index([whatsappMessageId])
+}
+
+model EmailLog {
+  id            String         @id @default(uuid())
+  applicationId String
+  recipient     String
+  subject       String
+  templateName  String
+  messageId     String?
+  status        String         @default("SENT") // "SENT" | "FAILED"
+  errorMessage  String?
+  sentAt        DateTime       @default(now())
+
+  application   JobApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+}
+
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String?  // null if system broadcast
+  title       String
+  message     String   @db.Text
+  category    String   // "INTERVIEW", "APPLICATION", "SYSTEM"
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+// -------------------------------------------------------------
+// AUDIT TRAILS & SYSTEM SETTINGS
+// -------------------------------------------------------------
+
+model AuditLog {
+  id                 String     @id @default(uuid())
+  actorId            String?
+  action             String     // e.g. "INTERVIEW_SCHEDULED", "CANDIDATE_SHORTLISTED"
+  entityType         String     // e.g. "JobApplication", "Interview"
+  entityId           String
+  beforeSnapshotJson String?    @db.Text
+  afterSnapshotJson  String?    @db.Text
+  ipAddress          String?
+  userAgent          String?
+  correlationId      String?
+  createdAt          DateTime   @default(now())
+
+  actor              AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   @db.Text
+  description String?
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+}
