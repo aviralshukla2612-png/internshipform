@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: recruitment_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: SecurePostgresPassword2026!
+      POSTGRES_DB: recruitment_db
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: recruitment_redis
+    restart: always
+    ports:
+      - "127.0.0.1:6380:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: recruitment_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "127.0.0.1:4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:SecurePostgresPassword2026!@postgres:5432/recruitment_db?schema=public
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=super-secret-jwt-key-recruitment-platform-32chars
+      - CORS_ORIGIN=https://internship.emperorsmartsolutions.com
+      - COOKIE_SECRET=cookie-secret-production-recruitment-key
+      - STORAGE_DRIVER=local
+      - STORAGE_LOCAL_DIR=/app/uploads
+      - INITIAL_SUPERADMIN_EMAIL=admin@enterprise.com
+      - INITIAL_SUPERADMIN_PASSWORD=AdminSecurePassword123!@#
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: recruitment_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://internship.emperorsmartsolutions.com/api/v1
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
