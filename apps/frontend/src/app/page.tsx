@@ -1354,20 +1354,41 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t bg-white py-8 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <img
-              src="/logo.webp"
-              alt="Emperor Smart Solutions"
-              className="w-6 h-6 object-contain"
-            />
-            <p>© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
+      <footer className="border-t bg-white py-10 text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <img
+                src="/logo.webp"
+                alt="Emperor Smart Solutions"
+                className="w-7 h-7 object-contain"
+              />
+              <span className="font-bold text-sm text-slate-900">Emperor Smart Solutions</span>
+            </div>
+            <p className="text-slate-500 text-xs leading-relaxed">
+              Industry recruitment and internship management platform.
+            </p>
+            <p className="mt-3 text-slate-400">© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
           </div>
-          <div className="flex items-center space-x-6">
-            <a href="#curriculum" className="hover:text-blue-600">Internship Program</a>
-            <Link href="/track" className="hover:text-blue-600">Application Tracking</Link>
-            <Link href="/login" className="hover:text-blue-600">HR Portal</Link>
+
+          <div>
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-900 block mb-2">
+              Admissions & Office
+            </span>
+            <p className="text-slate-600 leading-relaxed font-medium">
+              202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India
+            </p>
+          </div>
+
+          <div>
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-900 block mb-2">
+              Quick Links
+            </span>
+            <div className="flex flex-col space-y-2">
+              <a href="#curriculum" className="hover:text-blue-600 font-medium">Internship Program</a>
+              <Link href="/track" className="hover:text-blue-600 font-medium">Application Tracking</Link>
+              <Link href="/login" className="hover:text-blue-600 font-medium">HR Management Portal</Link>
+            </div>
           </div>
         </div>
       </footer>

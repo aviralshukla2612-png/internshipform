@@ -30,6 +30,10 @@ import {
   InterviewRoundType,
   InterviewMode,
 } from "@recruitment/shared";
+import { PremiumDateTimePicker } from "@/components/ui/premium-date-time-picker";
+
+const DEFAULT_OFFICE_ADDRESS =
+  "202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India";
 
 export default function CandidateDetailPage() {
   const params = useParams();
@@ -52,13 +56,15 @@ export default function CandidateDetailPage() {
 
   // Schedule Interview Modal State
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
-  const [scheduleRound, setScheduleRound] = useState<InterviewRoundType>(InterviewRoundType.TECHNICAL_ROUND);
-  const [scheduleMode, setScheduleMode] = useState<InterviewMode>(InterviewMode.ONLINE);
+  const [scheduleRound, setScheduleRound] = useState<InterviewRoundType>(InterviewRoundType.HR_ROUND);
+  const [scheduleMode, setScheduleMode] = useState<InterviewMode>(InterviewMode.OFFLINE);
   const [scheduledStart, setScheduledStart] = useState("");
   const [durationMinutes, setDurationMinutes] = useState(45);
   const [selectedInterviewerId, setSelectedInterviewerId] = useState("");
-  const [meetingDetails, setMeetingDetails] = useState("Google Meet: https://meet.google.com/abc-defg-hij");
-  const [instructions, setInstructions] = useState("Please join with video enabled and screen sharing ready.");
+  const [meetingDetails, setMeetingDetails] = useState(DEFAULT_OFFICE_ADDRESS);
+  const [instructions, setInstructions] = useState(
+    "Please report to the office 10 minutes before the scheduled time with your original credentials.",
+  );
   const [conflictError, setConflictError] = useState<string | null>(null);
 
   const { data: app, isLoading } = useQuery({
@@ -641,25 +647,41 @@ export default function CandidateDetailPage() {
                   <label className="block font-semibold text-slate-700 mb-1">Mode</label>
                   <select
                     value={scheduleMode}
-                    onChange={(e) => setScheduleMode(e.target.value as InterviewMode)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    onChange={(e) => {
+                      const mode = e.target.value as InterviewMode;
+                      setScheduleMode(mode);
+                      if (mode === InterviewMode.OFFLINE) {
+                        setMeetingDetails(DEFAULT_OFFICE_ADDRESS);
+                        setInstructions(
+                          "Please report to the office 10 minutes before the scheduled time with your original credentials.",
+                        );
+                      } else if (mode === InterviewMode.ONLINE) {
+                        setMeetingDetails("Google Meet: https://meet.google.com/ess-interview");
+                        setInstructions("Please join with video enabled and screen sharing ready.");
+                      } else if (mode === InterviewMode.TELEPHONIC) {
+                        setMeetingDetails(`Telephonic Discussion - Candidate Mobile: ${candidate.mobileNumber}`);
+                        setInstructions("Our HR team will call you on your registered mobile number.");
+                      }
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg bg-white"
                   >
-                    <option value={InterviewMode.ONLINE}>Online (Video)</option>
                     <option value={InterviewMode.OFFLINE}>Offline (In-Person)</option>
+                    <option value={InterviewMode.ONLINE}>Online (Video)</option>
                     <option value={InterviewMode.TELEPHONIC}>Telephonic</option>
                   </select>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Date & Start Time</label>
-                  <input
-                    type="datetime-local"
-                    required
+                  <label className="block font-semibold text-slate-700 mb-1">
+                    Date & Start Time <span className="text-red-500">*</span>
+                  </label>
+                  <PremiumDateTimePicker
                     value={scheduledStart}
-                    onChange={(e) => setScheduledStart(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    onChange={setScheduledStart}
+                    placeholder="Select Date & Start Time"
+                    required
                   />
                 </div>
                 <div>
@@ -668,7 +690,7 @@ export default function CandidateDetailPage() {
                     type="number"
                     value={durationMinutes}
                     onChange={(e) => setDurationMinutes(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg bg-white"
                   />
                 </div>
               </div>
@@ -678,7 +700,7 @@ export default function CandidateDetailPage() {
                 <select
                   value={selectedInterviewerId}
                   onChange={(e) => setSelectedInterviewerId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
                 >
                   <option value="">-- Choose Assigned Interviewer --</option>
                   {interviewers?.map((u: any) => (
@@ -690,14 +712,28 @@ export default function CandidateDetailPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Meeting Details / Office Address</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-slate-700">
+                    Meeting Details / Office Address <span className="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setMeetingDetails(DEFAULT_OFFICE_ADDRESS)}
+                    className="text-[10px] text-blue-600 hover:underline font-semibold"
+                  >
+                    Reset to Office Address
+                  </button>
+                </div>
                 <input
                   type="text"
                   required
                   value={meetingDetails}
                   onChange={(e) => setMeetingDetails(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
                 />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  Corporate Office: {DEFAULT_OFFICE_ADDRESS}
+                </p>
               </div>
 
               <div>

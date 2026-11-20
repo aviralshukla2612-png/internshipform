@@ -206,6 +206,7 @@ async function main() {
     { key: 'WHATSAPP_AUTO_REMINDER_HOURS', value: '24,2', description: 'Comma separated hours before interview to dispatch automatic reminders' },
     { key: 'MAX_RESUME_SIZE_MB', value: '5', description: 'Maximum allowed resume file upload size in MB' },
     { key: 'MAX_MARKSHEET_SIZE_MB', value: '5', description: 'Maximum allowed marksheet upload size in MB' },
+    { key: 'COMPANY_OFFICE_ADDRESS', value: '202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India', description: 'Primary Admissions & Corporate Office address for candidate in-person interviews' },
   ];
 
   for (const s of defaultSettings) {
