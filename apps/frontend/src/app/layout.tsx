@@ -3,9 +3,14 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 
 export const metadata: Metadata = {
-  title: "Enterprise Recruitment & Talent Management Portal",
+  title: "Emperor Smart Solutions | Internship & Talent Portal",
   description:
-    "End-to-end enterprise recruitment system, candidate application portal, and administrative hiring platform.",
+    "Official Internship Application & HR Management Portal for Emperor Smart Solutions. Accelerate your tech career with real-world industry engineering.",
+  icons: {
+    icon: "/logo.webp",
+    shortcut: "/logo.webp",
+    apple: "/logo.webp",
+  },
 };
 
 export default function RootLayout({

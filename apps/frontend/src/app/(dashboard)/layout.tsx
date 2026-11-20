@@ -65,13 +65,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-slate-100 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
-        <div className="h-16 px-6 flex items-center border-b border-slate-800">
-          <div className="bg-blue-600 text-white p-1.5 rounded-lg mr-3">
-            <Briefcase className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-bold text-white text-base tracking-tight">Enterprise HR</span>
-            <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest">Console</p>
+        <div className="h-16 px-5 flex items-center border-b border-slate-800">
+          <img
+            src="/logo.webp"
+            alt="Emperor Smart Solutions"
+            className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 mr-3 shrink-0"
+          />
+          <div className="min-w-0">
+            <span className="font-bold text-white text-sm tracking-tight block truncate">
+              Emperor Smart Solutions
+            </span>
+            <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest">HR Console</p>
           </div>
         </div>
 
@@ -122,7 +126,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-            <span>Enterprise Recruitment System</span>
+            <span>Emperor Smart Solutions</span>
             <span>/</span>
             <span className="text-slate-900 font-bold capitalize">
               {pathname.replace("/", "").replace("-", " ") || "Dashboard"}
@@ -135,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               target="_blank"
               className="text-xs text-blue-600 hover:underline font-medium"
             >
-              Open Candidate Portal &rarr;
+              Open Internship Portal &rarr;
             </Link>
           </div>
         </header>

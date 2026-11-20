@@ -42,13 +42,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 text-white shadow-lg mb-4">
-          <Briefcase className="w-6 h-6" />
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white p-2 shadow-xl mb-4 border border-slate-700">
+          <img
+            src="/logo.webp"
+            alt="Emperor Smart Solutions"
+            className="w-full h-full object-contain"
+          />
         </div>
         <h2 className="text-2xl font-bold text-white tracking-tight">
-          Admin & HR Management Portal
+          Emperor Smart Solutions
         </h2>
-        <p className="mt-2 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-blue-400 font-semibold uppercase tracking-wider">
+          Admin & HR Management Console
+        </p>
+        <p className="mt-1 text-xs text-slate-400">
           Secure, authenticated gateway for HR administrators and interviewers
         </p>
       </div>
@@ -124,7 +131,7 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-slate-100 text-center">
             <Link href="/" className="text-xs text-slate-500 hover:text-blue-600 transition">
-              &larr; Back to Public Candidate Portal
+              &larr; Back to Emperor Smart Solutions Internship Portal
             </Link>
           </div>
         </div>

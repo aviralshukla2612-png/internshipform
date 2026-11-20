@@ -201,8 +201,8 @@ async function main() {
 
   // 5. Seed Initial System Settings
   const defaultSettings = [
-    { key: 'COMPANY_NAME', value: 'Enterprise Tech Solutions Pvt Ltd', description: 'Official corporate organization name' },
-    { key: 'COMPANY_WEBSITE', value: 'https://www.enterprisetech.com', description: 'Company primary domain' },
+    { key: 'COMPANY_NAME', value: 'Emperor Smart Solutions', description: 'Official corporate organization name' },
+    { key: 'COMPANY_WEBSITE', value: 'https://internship.emperorsmartsolutions.com', description: 'Company primary domain' },
     { key: 'WHATSAPP_AUTO_REMINDER_HOURS', value: '24,2', description: 'Comma separated hours before interview to dispatch automatic reminders' },
     { key: 'MAX_RESUME_SIZE_MB', value: '5', description: 'Maximum allowed resume file upload size in MB' },
     { key: 'MAX_MARKSHEET_SIZE_MB', value: '5', description: 'Maximum allowed marksheet upload size in MB' },

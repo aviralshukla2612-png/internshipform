@@ -70,17 +70,32 @@ export default function TrackPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="border-b bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="bg-blue-600 text-white p-2 rounded-lg">
-              <Briefcase className="w-5 h-5" />
+          <Link href="/" className="flex items-center space-x-3">
+            <img
+              src="/logo.webp"
+              alt="Emperor Smart Solutions"
+              className="w-9 h-9 rounded-lg object-contain bg-white p-0.5 shadow-sm border border-slate-200"
+            />
+            <div>
+              <span className="font-extrabold text-lg text-slate-900 tracking-tight">
+                Emperor <span className="text-blue-600">Smart Solutions</span>
+              </span>
+              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+                Internship Portal
+              </span>
             </div>
-            <span className="font-bold text-xl text-slate-900">
-              Enterprise<span className="text-blue-600">Talent</span>
-            </span>
           </Link>
-          <Link href="/jobs" className="text-sm font-medium text-slate-600 hover:text-blue-600">
-            View Job Openings
-          </Link>
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="text-sm font-semibold text-slate-600 hover:text-blue-600">
+              Apply Now
+            </Link>
+            <Link
+              href="/login"
+              className="text-xs px-3 py-1.5 border border-slate-200 rounded-md text-slate-600 hover:bg-slate-50 font-semibold"
+            >
+              Admin Portal
+            </Link>
+          </div>
         </div>
       </header>
 

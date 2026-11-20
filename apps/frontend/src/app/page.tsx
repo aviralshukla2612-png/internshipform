@@ -409,12 +409,14 @@ export default function HomePage() {
       <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 text-white p-2 rounded-xl shadow-sm">
-              <Briefcase className="w-5 h-5" />
-            </div>
+            <img
+              src="/logo.webp"
+              alt="Emperor Smart Solutions Logo"
+              className="w-10 h-10 rounded-xl object-contain bg-white p-1 shadow-sm border border-slate-200"
+            />
             <div>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">
-                Emperor<span className="text-blue-600">SmartSolutions</span>
+                Emperor <span className="text-blue-600">Smart Solutions</span>
               </span>
               <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
                 Internship Portal
@@ -1536,7 +1538,14 @@ export default function HomePage() {
       {/* FOOTER */}
       <footer className="border-t bg-white py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo.webp"
+              alt="Emperor Smart Solutions"
+              className="w-6 h-6 object-contain"
+            />
+            <p>© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
+          </div>
           <div className="flex items-center space-x-6">
             <a href="#curriculum" className="hover:text-blue-600">Internship Program</a>
             <Link href="/track" className="hover:text-blue-600">Application Tracking</Link>
