@@ -70,10 +70,10 @@ export interface CandidateApplicationSubmissionDto {
   mobileNumber: string;
   whatsappNumber: string;
   email: string;
-  currentAddress: AddressDto;
-  permanentAddress: AddressDto;
+  currentAddress?: Partial<AddressDto>;
+  permanentAddress?: Partial<AddressDto>;
   isSameAddress?: boolean;
-  profilePhotoDocId: string;
+  profilePhotoDocId?: string;
 
   // Section B: Education
   education: EducationEntryDto[];

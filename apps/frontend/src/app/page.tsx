@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { apiClient, uploadDocument } from "@/lib/api";
+import { PremiumDatePicker } from "@/components/ui/premium-date-picker";
 import {
   Gender,
   EducationCategory,
@@ -11,7 +12,6 @@ import {
   DocumentType,
 } from "@recruitment/shared";
 import {
-  Briefcase,
   Cpu,
   Database,
   Layers,
@@ -28,7 +28,7 @@ import {
   Upload,
   User,
   GraduationCap,
-  Wrench,
+  Briefcase,
   FileUp,
   ArrowRight,
   Search,
@@ -55,21 +55,6 @@ export default function HomePage() {
   const [email, setEmail] = useState("");
   const [profilePhotoDocId, setProfilePhotoDocId] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-
-  // Address Details
-  const [currentAddress, setCurrentAddress] = useState({
-    street: "",
-    city: "",
-    state: "",
-    pinCode: "",
-  });
-  const [isSameAddress, setIsSameAddress] = useState(true);
-  const [permanentAddress, setPermanentAddress] = useState({
-    street: "",
-    city: "",
-    state: "",
-    pinCode: "",
-  });
 
   // SECTION B: Educational Information
   const [educationList, setEducationList] = useState<any[]>([
@@ -112,22 +97,11 @@ export default function HomePage() {
     },
   ]);
 
-  // SECTION D: Skills & Domain Preferences
-  const [selectedTrack, setSelectedTrack] = useState("Full-Stack (MERN / MEAN) & AI");
-  const [technicalSkillsInput, setTechnicalSkillsInput] = useState("React, Node.js, TypeScript, PostgreSQL, Python");
-  const [professionalSkillsInput, setProfessionalSkillsInput] = useState("Problem Solving, Team Collaboration, Analytical Logic");
-  const [languagesInput, setLanguagesInput] = useState("English, Hindi");
-  const [noticePeriodDays, setNoticePeriodDays] = useState(0);
-  const [currentEmploymentStatus, setCurrentEmploymentStatus] = useState("Student / Fresher");
-  const [preferredJobLocation, setPreferredJobLocation] = useState("Hybrid / Remote");
-  const [availabilityDate, setAvailabilityDate] = useState("");
-  const [additionalInformation, setAdditionalInformation] = useState("");
-
-  // SECTION E: Document Uploads
+  // SECTION D: Document Uploads (previously Step 5)
   const [resumeDocId, setResumeDocId] = useState("");
   const [resumeFileName, setResumeFileName] = useState("");
 
-  // SECTION F: Declarations & Consents
+  // SECTION E: Declarations & Consents (previously Step 6)
   const [accuracyConfirmed, setAccuracyConfirmed] = useState(false);
   const [recruitmentProcessingConsent, setRecruitmentProcessingConsent] = useState(false);
   const [privacyPolicyAcknowledged, setPrivacyPolicyAcknowledged] = useState(false);
@@ -149,7 +123,7 @@ export default function HomePage() {
     }
   };
 
-  // File Upload Handler (using relative /api/v1)
+  // File Upload Handler
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: DocumentType,
@@ -255,27 +229,37 @@ export default function HomePage() {
     setExperienceList(experienceList.filter((_, i) => i !== index));
   };
 
-  // Step Validation
+  // Step Validation (5-step flow)
   const validateStep = (currentStep: number): boolean => {
     setErrorMessage(null);
+
+    // Step 1: Personal Details
     if (currentStep === 1) {
       if (!fullName.trim() || !fatherName.trim() || !motherName.trim() || !dob) {
-        setErrorMessage("Please complete all required personal details.");
+        setErrorMessage("Please complete your Full Name, Father's Name, Mother's Name, and Date of Birth.");
         return false;
       }
       if (!gender) {
         setErrorMessage("Gender selection is compulsory to proceed.");
         return false;
       }
-      if (!mobileNumber.trim() || !email.trim() || !whatsappNumber.trim()) {
-        setErrorMessage("Valid contact numbers and email address are required.");
+      const cleanMob = mobileNumber.replace(/\D/g, "");
+      if (cleanMob.length !== 10) {
+        setErrorMessage("Mobile Number must be exactly 10 digits.");
         return false;
       }
-      if (!currentAddress.street || !currentAddress.city || !currentAddress.pinCode) {
-        setErrorMessage("Please complete your current address details.");
+      const cleanWa = whatsappNumber.replace(/\D/g, "");
+      if (cleanWa.length !== 10) {
+        setErrorMessage("WhatsApp Number must be exactly 10 digits.");
         return false;
       }
-    } else if (currentStep === 2) {
+      if (!email.trim() || !email.includes("@")) {
+        setErrorMessage("Please enter a valid email address.");
+        return false;
+      }
+    }
+    // Step 2: Education
+    else if (currentStep === 2) {
       for (const edu of educationList) {
         if (!edu.degreeName.trim() || !edu.institutionName.trim() || !edu.passingYear) {
           setErrorMessage("Please provide degree, institution, and passing year details.");
@@ -288,7 +272,9 @@ export default function HomePage() {
           }
         }
       }
-    } else if (currentStep === 3) {
+    }
+    // Step 3: Experience
+    else if (currentStep === 3) {
       if (!isFresher) {
         for (const exp of experienceList) {
           if (!exp.companyName.trim() || !exp.designation.trim() || !exp.joiningDate) {
@@ -303,12 +289,15 @@ export default function HomePage() {
           }
         }
       }
-    } else if (currentStep === 5) {
+    }
+    // Step 4: Documents (previously step 5)
+    else if (currentStep === 4) {
       if (!resumeDocId) {
         setErrorMessage("A valid Resume/CV (PDF) upload is required.");
         return false;
       }
     }
+
     return true;
   };
 
@@ -340,17 +329,17 @@ export default function HomePage() {
     setIsSubmitting(true);
 
     const payload = {
-      fullName,
-      fatherName,
-      motherName,
+      fullName: fullName.trim(),
+      fatherName: fatherName.trim(),
+      motherName: motherName.trim(),
       dateOfBirth: dob,
       gender,
-      mobileNumber,
-      whatsappNumber,
-      email,
-      currentAddress,
-      permanentAddress: isSameAddress ? currentAddress : permanentAddress,
-      isSameAddress,
+      mobileNumber: mobileNumber.replace(/\D/g, ""),
+      whatsappNumber: whatsappNumber.replace(/\D/g, ""),
+      email: email.trim().toLowerCase(),
+      currentAddress: { street: "", city: "", state: "", pinCode: "" },
+      permanentAddress: { street: "", city: "", state: "", pinCode: "" },
+      isSameAddress: true,
       profilePhotoDocId,
       education: educationList.map((e) => ({
         ...e,
@@ -369,18 +358,14 @@ export default function HomePage() {
             lastDrawnSalary: exp.lastDrawnSalary ? parseFloat(exp.lastDrawnSalary) : undefined,
             expectedSalary: exp.expectedSalary ? parseFloat(exp.expectedSalary) : undefined,
           })),
-      technicalSkills: [
-        `Track: ${selectedTrack}`,
-        ...technicalSkillsInput.split(",").map((s) => s.trim()).filter(Boolean),
-      ],
-      professionalSkills: professionalSkillsInput.split(",").map((s) => s.trim()).filter(Boolean),
-      languagesKnown: languagesInput.split(",").map((s) => s.trim()).filter(Boolean),
-      noticePeriodDays: Number(noticePeriodDays) || 0,
-      currentEmploymentStatus,
-      preferredJobLocation,
+      technicalSkills: ["AI/ML", "Full-Stack (MERN / MEAN)", "Database Architecture & Systems"],
+      professionalSkills: ["Problem Solving", "Team Collaboration", "System Design Logic"],
+      languagesKnown: ["English", "Hindi"],
+      noticePeriodDays: 0,
+      currentEmploymentStatus: isFresher ? "Fresher / Student" : "Experienced",
+      preferredJobLocation: "Hybrid / Remote",
       expectedSalary: 0,
-      availabilityToJoinDate: availabilityDate || undefined,
-      additionalInformation: `Selected Domain: ${selectedTrack}. ${additionalInformation}`.trim(),
+      additionalInformation: "Direct Internship Cohort 2026 Application",
       resumeDocId,
       accuracyConfirmed,
       recruitmentProcessingConsent,
@@ -406,13 +391,13 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {/* HEADER / NAVIGATION */}
-      <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50">
+      <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <img
               src="/logo.webp"
               alt="Emperor Smart Solutions Logo"
-              className="w-10 h-10 rounded-xl object-contain bg-white p-1 shadow-sm border border-slate-200"
+              className="w-10 h-10 rounded-xl object-contain shadow-sm"
             />
             <div>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">
@@ -642,7 +627,7 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto">
               <Link
                 href="/track"
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition shadow-sm"
               >
                 <Search className="w-4 h-4" /> Track Status Now
               </Link>
@@ -672,15 +657,14 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Multi-Step Wizard Progress */}
-            <div className="grid grid-cols-6 gap-2 text-center text-xs font-semibold">
+            {/* 5-Step Wizard Progress Bar (Skills removed) */}
+            <div className="grid grid-cols-5 gap-2 text-center text-xs font-semibold">
               {[
                 { num: 1, label: "Personal", icon: User },
                 { num: 2, label: "Education", icon: GraduationCap },
                 { num: 3, label: "Experience", icon: Briefcase },
-                { num: 4, label: "Skills", icon: Wrench },
-                { num: 5, label: "Documents", icon: FileUp },
-                { num: 6, label: "Consent", icon: CheckCircle2 },
+                { num: 4, label: "Documents", icon: FileUp },
+                { num: 5, label: "Consent", icon: CheckCircle2 },
               ].map((item) => (
                 <div
                   key={item.num}
@@ -726,7 +710,7 @@ export default function HomePage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Candidate full name"
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
                     <div>
@@ -739,7 +723,7 @@ export default function HomePage() {
                         value={fatherName}
                         onChange={(e) => setFatherName(e.target.value)}
                         placeholder="Father's full name"
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
                     <div>
@@ -752,22 +736,24 @@ export default function HomePage() {
                         value={motherName}
                         onChange={(e) => setMotherName(e.target.value)}
                         placeholder="Mother's full name"
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* PREMIUM DATE OF BIRTH PICKER */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
                         Date of Birth <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="date"
-                        required
+                      <PremiumDatePicker
                         value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        onChange={setDob}
+                        placeholder="Select Date of Birth"
+                        minYear={1975}
+                        maxYear={new Date().getFullYear() - 14}
+                        required
                       />
                     </div>
 
@@ -780,7 +766,7 @@ export default function HomePage() {
                         required
                         value={gender}
                         onChange={(e) => setGender(e.target.value as Gender)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium shadow-sm"
                       >
                         <option value="" disabled>
                           -- Select Compulsory Gender Option --
@@ -793,44 +779,69 @@ export default function HomePage() {
                     </div>
                   </div>
 
+                  {/* 10-DIGIT VALIDATED MOBILE & WHATSAPP NUMBERS */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Mobile Number <span className="text-red-500">*</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-700">
+                          Mobile Number <span className="text-red-500">*</span>
+                        </label>
+                        <span className={`text-[10px] font-bold ${mobileNumber.length === 10 ? "text-emerald-600" : "text-slate-400"}`}>
+                          {mobileNumber.length === 10 ? "10/10 ✓" : `${mobileNumber.length}/10 digits`}
+                        </span>
+                      </div>
                       <input
                         type="tel"
                         required
-                        placeholder="+91 9876543210"
+                        maxLength={10}
+                        placeholder="10-digit mobile number"
                         value={mobileNumber}
-                        onChange={(e) => setMobileNumber(e.target.value)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
+                          mobileNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
+                        }`}
                       />
                     </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        WhatsApp Number <span className="text-red-500">*</span>
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-700">
+                          WhatsApp Number <span className="text-red-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setWhatsappNumber(mobileNumber)}
+                          className="text-[10px] text-blue-600 hover:underline font-semibold"
+                        >
+                          Same as Mobile
+                        </button>
+                      </div>
                       <input
                         type="tel"
                         required
-                        placeholder="+91 9876543210"
+                        maxLength={10}
+                        placeholder="10-digit WhatsApp number"
                         value={whatsappNumber}
-                        onChange={(e) => setWhatsappNumber(e.target.value)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
+                          whatsappNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
+                        }`}
                       />
                     </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Email Address <span className="text-red-500">*</span>
-                      </label>
+                      <div className="mb-1">
+                        <label className="block text-xs font-semibold text-slate-700">
+                          Email Address <span className="text-red-500">*</span>
+                        </label>
+                      </div>
                       <input
                         type="email"
                         required
                         placeholder="candidate@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
                   </div>
@@ -848,7 +859,7 @@ export default function HomePage() {
                           className="w-16 h-16 rounded-full object-cover border-2 border-blue-500 shadow-sm"
                         />
                       )}
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition">
+                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition shadow-sm">
                         <Upload className="w-4 h-4 text-slate-500" />
                         <span>Upload Photo</span>
                         <input
@@ -863,124 +874,11 @@ export default function HomePage() {
                         />
                       </label>
                       {profilePhotoDocId && (
-                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                        <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
                           <Check className="w-3.5 h-3.5" /> Uploaded & Verified
                         </span>
                       )}
                     </div>
-                  </div>
-
-                  {/* Addresses */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">Current Address</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                      <div className="sm:col-span-2">
-                        <input
-                          type="text"
-                          placeholder="Street Address / House No."
-                          value={currentAddress.street}
-                          onChange={(e) =>
-                            setCurrentAddress({ ...currentAddress, street: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="City"
-                          value={currentAddress.city}
-                          onChange={(e) =>
-                            setCurrentAddress({ ...currentAddress, city: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="State"
-                          value={currentAddress.state}
-                          onChange={(e) =>
-                            setCurrentAddress({ ...currentAddress, state: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="PIN Code"
-                          value={currentAddress.pinCode}
-                          onChange={(e) =>
-                            setCurrentAddress({ ...currentAddress, pinCode: e.target.value })
-                          }
-                          className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-2">
-                      <input
-                        type="checkbox"
-                        id="sameAddr"
-                        checked={isSameAddress}
-                        onChange={(e) => setIsSameAddress(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <label htmlFor="sameAddr" className="text-xs font-medium text-slate-700">
-                        Permanent Address is the same as Current Address
-                      </label>
-                    </div>
-
-                    {!isSameAddress && (
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 pt-2">
-                        <div className="sm:col-span-2">
-                          <input
-                            type="text"
-                            placeholder="Permanent Street Address"
-                            value={permanentAddress.street}
-                            onChange={(e) =>
-                              setPermanentAddress({ ...permanentAddress, street: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="City"
-                            value={permanentAddress.city}
-                            onChange={(e) =>
-                              setPermanentAddress({ ...permanentAddress, city: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="State"
-                            value={permanentAddress.state}
-                            onChange={(e) =>
-                              setPermanentAddress({ ...permanentAddress, state: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                          />
-                        </div>
-                        <div>
-                          <input
-                            type="text"
-                            placeholder="PIN Code"
-                            value={permanentAddress.pinCode}
-                            onChange={(e) =>
-                              setPermanentAddress({ ...permanentAddress, pinCode: e.target.value })
-                            }
-                            className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -1002,7 +900,7 @@ export default function HomePage() {
                   </div>
 
                   {educationList.map((edu, idx) => (
-                    <div key={idx} className="p-5 border rounded-xl bg-slate-50/60 space-y-4 relative">
+                    <div key={idx} className="p-5 border border-slate-200 rounded-xl bg-slate-50/60 space-y-4 relative">
                       {educationList.length > 1 && (
                         <button
                           type="button"
@@ -1138,7 +1036,7 @@ export default function HomePage() {
 
                       {/* Marksheet Upload */}
                       <div className="pt-2 flex items-center gap-3">
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-700 bg-white hover:bg-slate-50">
+                        <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm">
                           <Upload className="w-3.5 h-3.5" />
                           <span>Upload Marksheet</span>
                           <input
@@ -1153,7 +1051,7 @@ export default function HomePage() {
                           />
                         </label>
                         {edu.marksheetDocId && (
-                          <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                          <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
                             <Check className="w-3.5 h-3.5" /> Marksheet Uploaded
                           </span>
                         )}
@@ -1208,7 +1106,7 @@ export default function HomePage() {
                   {!isFresher && (
                     <div className="space-y-4">
                       {experienceList.map((exp, idx) => (
-                        <div key={idx} className="p-5 border rounded-xl bg-slate-50/60 space-y-4 relative">
+                        <div key={idx} className="p-5 border border-slate-200 rounded-xl bg-slate-50/60 space-y-4 relative">
                           {experienceList.length > 1 && (
                             <button
                               type="button"
@@ -1300,105 +1198,25 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* STEP 4: SKILLS & DOMAIN PREFERENCES */}
+              {/* STEP 4: DOCUMENT UPLOADS */}
               {step === 4 && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <Wrench className="w-5 h-5 text-blue-600" /> Section D: Skills & Domain Preferences
+                    <FileUp className="w-5 h-5 text-blue-600" /> Section D: Document Uploads
                   </h3>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Preferred Internship Track <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={selectedTrack}
-                      onChange={(e) => setSelectedTrack(e.target.value)}
-                      className="w-full px-3.5 py-2.5 border rounded-lg text-sm bg-white font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="Full-Stack (MERN / MEAN) & AI">Full-Stack (MERN / MEAN) & AI Engineering</option>
-                      <option value="Artificial Intelligence & Machine Learning (AI/ML)">Artificial Intelligence & Machine Learning (AI/ML)</option>
-                      <option value="Database Engineering & Backend Logic">Database Engineering & Backend Architecture Logic</option>
-                      <option value="Cloud Systems & DevOps Engineering">Cloud Systems & DevOps Engineering</option>
-                      <option value="General Software Engineering Internship">General Software Engineering Internship</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Technical Skills (comma separated)
-                    </label>
-                    <input
-                      type="text"
-                      value={technicalSkillsInput}
-                      onChange={(e) => setTechnicalSkillsInput(e.target.value)}
-                      placeholder="e.g. React, Next.js, Python, PostgreSQL, Node.js"
-                      className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Languages Known
-                      </label>
-                      <input
-                        type="text"
-                        value={languagesInput}
-                        onChange={(e) => setLanguagesInput(e.target.value)}
-                        placeholder="e.g. English, Hindi"
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                      />
+                  <div className="p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 text-center space-y-4">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
+                      <FileUp className="w-7 h-7" />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Preferred Work Location
-                      </label>
-                      <select
-                        value={preferredJobLocation}
-                        onChange={(e) => setPreferredJobLocation(e.target.value)}
-                        className="w-full px-3.5 py-2 border rounded-lg text-sm bg-white"
-                      >
-                        <option value="Hybrid / Remote">Hybrid / Remote</option>
-                        <option value="On-Site Office">On-Site Office</option>
-                        <option value="Flexible">Flexible</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Availability to Join Date
-                    </label>
-                    <input
-                      type="date"
-                      value={availabilityDate}
-                      onChange={(e) => setAvailabilityDate(e.target.value)}
-                      className="w-full px-3.5 py-2 border rounded-lg text-sm"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* STEP 5: DOCUMENT UPLOADS */}
-              {step === 5 && (
-                <div className="space-y-6">
-                  <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <FileUp className="w-5 h-5 text-blue-600" /> Section E: Document Uploads
-                  </h3>
-
-                  <div className="p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mx-auto">
-                      <FileUp className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <span className="font-bold text-sm text-slate-900">Upload Your Resume / CV</span>
-                      <p className="text-xs text-slate-500 mt-0.5">PDF format only, maximum 5 MB</p>
+                      <span className="font-extrabold text-base text-slate-900 block">Upload Your Resume / CV</span>
+                      <p className="text-xs text-slate-500 mt-1">PDF format only, maximum allowed size 5 MB</p>
                     </div>
 
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-sm">
                       <Upload className="w-4 h-4" />
-                      <span>{resumeDocId ? "Change Resume File" : "Choose Resume PDF"}</span>
+                      <span>{resumeDocId ? "Change Resume PDF" : "Choose Resume PDF"}</span>
                       <input
                         type="file"
                         accept="application/pdf"
@@ -1413,7 +1231,7 @@ export default function HomePage() {
                     </label>
 
                     {resumeDocId && (
-                      <div className="text-xs text-emerald-600 font-semibold flex items-center justify-center gap-1.5 pt-2">
+                      <div className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1.5 pt-2">
                         <Check className="w-4 h-4" /> Verified & Uploaded: {resumeFileName || "resume.pdf"}
                       </div>
                     )}
@@ -1421,14 +1239,14 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* STEP 6: DECLARATION & CONSENT */}
-              {step === 6 && (
+              {/* STEP 5: DECLARATION & CONSENT */}
+              {step === 5 && (
                 <div className="space-y-6">
                   <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600" /> Section F: Declaration & Consent
+                    <CheckCircle2 className="w-5 h-5 text-blue-600" /> Section E: Declaration & Consent
                   </h3>
 
-                  <div className="space-y-4 text-xs text-slate-700 bg-slate-50 p-5 rounded-xl border">
+                  <div className="space-y-4 text-xs text-slate-700 bg-slate-50 p-6 rounded-2xl border border-slate-200">
                     <label className="flex items-start gap-3 cursor-pointer">
                       <input
                         type="checkbox"
@@ -1471,7 +1289,7 @@ export default function HomePage() {
                       </span>
                     </label>
 
-                    <div className="pt-2 border-t">
+                    <div className="pt-2 border-t border-slate-200">
                       <label className="flex items-start gap-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -1489,13 +1307,13 @@ export default function HomePage() {
                 </div>
               )}
 
-              {/* Wizard Nav Buttons */}
+              {/* Wizard Nav Buttons (5 steps total) */}
               <div className="mt-8 pt-6 border-t flex items-center justify-between">
                 {step > 1 ? (
                   <button
                     type="button"
                     onClick={prevStep}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition"
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm"
                   >
                     <ChevronLeft className="w-4 h-4" /> Previous
                   </button>
@@ -1503,7 +1321,7 @@ export default function HomePage() {
                   <div />
                 )}
 
-                {step < 6 ? (
+                {step < 5 ? (
                   <button
                     type="button"
                     onClick={nextStep}

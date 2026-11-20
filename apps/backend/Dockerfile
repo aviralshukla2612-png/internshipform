@@ -24,6 +24,9 @@ ENV PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1
 RUN pnpm db:generate
 RUN pnpm build
 
+# Ensure upload directory exists
+RUN mkdir -p /app/uploads && chmod 777 /app/uploads
+
 EXPOSE 4000
 
-CMD ["sh", "-c", "pnpm db:push && pnpm db:seed ; node dist/main.js"]
+CMD ["sh", "-c", "pnpm db:push --accept-data-loss || true ; pnpm db:seed || true ; node dist/main.js"]

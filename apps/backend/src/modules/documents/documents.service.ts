@@ -103,8 +103,16 @@ export class DocumentsService {
     const storageKey = `${uuidv4()}${ext}`;
     const storagePath = path.join(this.uploadDir, storageKey);
 
-    // Save to local private directory
-    await fs.promises.writeFile(storagePath, file.buffer);
+    // Save to local private directory safely
+    try {
+      if (!fs.existsSync(this.uploadDir)) {
+        fs.mkdirSync(this.uploadDir, { recursive: true });
+      }
+      await fs.promises.writeFile(storagePath, file.buffer);
+    } catch (writeErr: any) {
+      this.logger.error(`Error saving uploaded document to disk: ${writeErr.message}`, writeErr.stack);
+      throw new BadRequestException(`Failed to persist file upload on server: ${writeErr.message}`);
+    }
 
     // Get hex signature snippet for audit record
     const signatureHex = file.buffer.slice(0, 8).toString('hex').toUpperCase();

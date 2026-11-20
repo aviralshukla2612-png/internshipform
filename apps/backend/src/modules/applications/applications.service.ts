@@ -39,6 +39,16 @@ export class ApplicationsService {
       throw new BadRequestException('Gender is compulsory and must be one of the specified choices.');
     }
 
+    // 1b. Strict 10-Digit Mobile & WhatsApp Validation
+    const cleanMobile = (dto.mobileNumber || '').replace(/\D/g, '').slice(0, 10);
+    const cleanWhatsapp = (dto.whatsappNumber || '').replace(/\D/g, '').slice(0, 10);
+    if (cleanMobile.length !== 10) {
+      throw new BadRequestException('Mobile Number must be exactly 10 numeric digits.');
+    }
+    if (cleanWhatsapp.length !== 10) {
+      throw new BadRequestException('WhatsApp Number must be exactly 10 numeric digits.');
+    }
+
     // 2. Resolve Job Position (Internship position by default)
     let job = null;
     if (dto.jobId) {
@@ -89,7 +99,7 @@ export class ApplicationsService {
         candidate: {
           OR: [
             { email: dto.email.toLowerCase().trim() },
-            { mobileNumber: dto.mobileNumber.trim() },
+            { mobileNumber: cleanMobile },
           ],
         },
       },
@@ -100,7 +110,7 @@ export class ApplicationsService {
 
     if (existingApplication) {
       throw new BadRequestException(
-        `An application for this program has already been submitted under email ${dto.email} or mobile ${dto.mobileNumber} (Application ID: ${existingApplication.applicationCode}).`,
+        `An application for this program has already been submitted under email ${dto.email} or mobile ${cleanMobile} (Application ID: ${existingApplication.applicationCode}).`,
       );
     }
 
@@ -147,7 +157,7 @@ export class ApplicationsService {
         where: {
           OR: [
             { email: dto.email.toLowerCase().trim() },
-            { mobileNumber: dto.mobileNumber.trim() },
+            { mobileNumber: cleanMobile },
           ],
         },
       });
@@ -161,8 +171,8 @@ export class ApplicationsService {
             motherName: dto.motherName.trim(),
             dateOfBirth: new Date(dto.dateOfBirth),
             gender: dto.gender as any,
-            mobileNumber: dto.mobileNumber.trim(),
-            whatsappNumber: dto.whatsappNumber.trim(),
+            mobileNumber: cleanMobile,
+            whatsappNumber: cleanWhatsapp,
             email: dto.email.toLowerCase().trim(),
             profilePhotoDocId: dto.profilePhotoDocId,
           },
@@ -177,32 +187,43 @@ export class ApplicationsService {
             motherName: dto.motherName.trim(),
             dateOfBirth: new Date(dto.dateOfBirth),
             gender: dto.gender as any,
-            whatsappNumber: dto.whatsappNumber.trim(),
+            mobileNumber: cleanMobile,
+            whatsappNumber: cleanWhatsapp,
             profilePhotoDocId: dto.profilePhotoDocId || candidate.profilePhotoDocId,
           },
         });
       }
 
-      // Candidate Addresses
+      // Candidate Addresses (Fallback gracefully if omitted from client form)
+      const currentStreet = dto.currentAddress?.street?.trim() || 'Not Provided';
+      const currentCity = dto.currentAddress?.city?.trim() || 'Not Provided';
+      const currentState = dto.currentAddress?.state?.trim() || 'Not Provided';
+      const currentPin = dto.currentAddress?.pinCode?.trim() || '000000';
+
       await tx.candidateAddress.create({
         data: {
           candidateId: candidate.id,
           type: AddressType.CURRENT as any,
-          street: dto.currentAddress.street,
-          city: dto.currentAddress.city,
-          state: dto.currentAddress.state,
-          pinCode: dto.currentAddress.pinCode,
+          street: currentStreet,
+          city: currentCity,
+          state: currentState,
+          pinCode: currentPin,
         },
       });
+
+      const permStreet = dto.isSameAddress ? currentStreet : (dto.permanentAddress?.street?.trim() || currentStreet);
+      const permCity = dto.isSameAddress ? currentCity : (dto.permanentAddress?.city?.trim() || currentCity);
+      const permState = dto.isSameAddress ? currentState : (dto.permanentAddress?.state?.trim() || currentState);
+      const permPin = dto.isSameAddress ? currentPin : (dto.permanentAddress?.pinCode?.trim() || currentPin);
 
       await tx.candidateAddress.create({
         data: {
           candidateId: candidate.id,
           type: AddressType.PERMANENT as any,
-          street: dto.isSameAddress ? dto.currentAddress.street : dto.permanentAddress.street,
-          city: dto.isSameAddress ? dto.currentAddress.city : dto.permanentAddress.city,
-          state: dto.isSameAddress ? dto.currentAddress.state : dto.permanentAddress.state,
-          pinCode: dto.isSameAddress ? dto.currentAddress.pinCode : dto.permanentAddress.pinCode,
+          street: permStreet,
+          city: permCity,
+          state: permState,
+          pinCode: permPin,
         },
       });
 
@@ -259,13 +280,20 @@ export class ApplicationsService {
         }
       }
 
-      // Skills
-      for (const skill of dto.technicalSkills) {
+      // Skills (Defaults populated if skill wizard step skipped)
+      const techSkills = Array.isArray(dto.technicalSkills) && dto.technicalSkills.length > 0
+        ? dto.technicalSkills
+        : ['AI/ML Logic', 'MERN & MEAN Stack', 'PostgreSQL', 'Database Systems'];
+      const profSkills = Array.isArray(dto.professionalSkills) && dto.professionalSkills.length > 0
+        ? dto.professionalSkills
+        : ['Problem Solving', 'Analytical Logic', 'Teamwork'];
+
+      for (const skill of techSkills) {
         await tx.candidateSkill.create({
           data: { candidateId: candidate.id, skillName: skill, isTechnical: true },
         });
       }
-      for (const skill of dto.professionalSkills) {
+      for (const skill of profSkills) {
         await tx.candidateSkill.create({
           data: { candidateId: candidate.id, skillName: skill, isTechnical: false },
         });

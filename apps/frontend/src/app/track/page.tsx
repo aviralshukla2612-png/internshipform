@@ -74,7 +74,7 @@ export default function TrackPage() {
             <img
               src="/logo.webp"
               alt="Emperor Smart Solutions"
-              className="w-9 h-9 rounded-lg object-contain bg-white p-0.5 shadow-sm border border-slate-200"
+              className="w-10 h-10 rounded-xl object-contain shadow-sm"
             />
             <div>
               <span className="font-extrabold text-lg text-slate-900 tracking-tight">

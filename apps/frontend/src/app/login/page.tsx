@@ -42,11 +42,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white p-2 shadow-xl mb-4 border border-slate-700">
+        <div className="flex justify-center mb-4">
           <img
             src="/logo.webp"
             alt="Emperor Smart Solutions"
-            className="w-full h-full object-contain"
+            className="w-16 h-16 rounded-2xl object-contain shadow-2xl"
           />
         </div>
         <h2 className="text-2xl font-bold text-white tracking-tight">

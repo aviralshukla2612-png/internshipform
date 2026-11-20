@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <img
             src="/logo.webp"
             alt="Emperor Smart Solutions"
-            className="w-8 h-8 rounded-lg object-contain bg-white p-0.5 mr-3 shrink-0"
+            className="w-9 h-9 rounded-lg object-contain mr-3 shrink-0 shadow-sm"
           />
           <div className="min-w-0">
             <span className="font-bold text-white text-sm tracking-tight block truncate">
