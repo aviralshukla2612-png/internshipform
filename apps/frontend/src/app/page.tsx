@@ -8,381 +8,215 @@ import {
   Gender,
   EducationCategory,
   GradingSystem,
-  EmploymentType,
   DocumentType,
 } from "@recruitment/shared";
 import {
   Cpu,
   Database,
   Layers,
-  Server,
-  Award,
+  Code2,
+  GitBranch,
+  ShieldCheck,
   CheckCircle2,
   ChevronRight,
-  ChevronLeft,
-  Plus,
-  Trash2,
   AlertCircle,
   Loader2,
   Check,
   Upload,
   User,
   GraduationCap,
-  Briefcase,
   FileUp,
-  ArrowRight,
   Search,
+  Phone,
+  Mail,
   Sparkles,
-  Terminal,
-  ShieldCheck,
-  Code2,
 } from "lucide-react";
 
 export default function HomePage() {
-  const [step, setStep] = useState(1);
+  // Submission Status
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionSuccess, setSubmissionSuccess] = useState<any | null>(null);
+  const [submissionSuccess, setSubmissionSuccess] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // SECTION A: Personal Information
+  // SECTION 1: Personal Details
   const [fullName, setFullName] = useState("");
-  const [fatherName, setFatherName] = useState("");
-  const [motherName, setMotherName] = useState("");
   const [dob, setDob] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
+
+  // SECTION 2: Contact Information
   const [mobileNumber, setMobileNumber] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [profilePhotoDocId, setProfilePhotoDocId] = useState("");
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
-  // SECTION B: Educational Information
-  const [educationList, setEducationList] = useState<any[]>([
-    {
-      qualificationType: EducationCategory.GRADUATION,
-      degreeName: "",
-      institutionName: "",
-      universityOrBoard: "",
-      specialization: "",
-      passingYear: new Date().getFullYear(),
-      totalMarks: "",
-      obtainedMarks: "",
-      percentage: "",
-      cgpa: "",
-      gradingSystem: GradingSystem.PERCENTAGE,
-      marksheetDocId: "",
-    },
-  ]);
+  // SECTION 3: Education
+  const [degreeName, setDegreeName] = useState("B.Tech / B.E (Computer Science & Engineering)");
+  const [institutionName, setInstitutionName] = useState("");
+  const [passingYear, setPassingYear] = useState<number>(new Date().getFullYear());
 
-  // SECTION C: Work Experience
-  const [isFresher, setIsFresher] = useState(true);
-  const [experienceList, setExperienceList] = useState<any[]>([
-    {
-      companyName: "",
-      companyAddress: "",
-      companyWebsite: "",
-      designation: "",
-      department: "",
-      employmentType: EmploymentType.FULL_TIME,
-      joiningDate: "",
-      leavingDate: "",
-      currentlyWorking: false,
-      totalExperienceMonths: 12,
-      lastDrawnSalary: "",
-      expectedSalary: "",
-      reasonForLeaving: "",
-      jobResponsibilities: "",
-      hrContactInfo: "",
-      experienceCertDocId: "",
-    },
-  ]);
-
-  // SECTION D: Document Uploads (previously Step 5)
+  // SECTION 4: Documents
   const [resumeDocId, setResumeDocId] = useState("");
   const [resumeFileName, setResumeFileName] = useState("");
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
-  // SECTION E: Declarations & Consents (previously Step 6)
-  const [accuracyConfirmed, setAccuracyConfirmed] = useState(false);
-  const [recruitmentProcessingConsent, setRecruitmentProcessingConsent] = useState(false);
-  const [privacyPolicyAcknowledged, setPrivacyPolicyAcknowledged] = useState(false);
-  const [whatsappConsent, setWhatsappConsent] = useState(false);
+  const [profilePhotoDocId, setProfilePhotoDocId] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
-  // Marksheet Document Type mapper
-  const getDocTypeForEdu = (qType: EducationCategory): DocumentType => {
-    switch (qType) {
-      case EducationCategory.CLASS_10:
-        return DocumentType.MARKSHEET_10;
-      case EducationCategory.CLASS_12:
-        return DocumentType.MARKSHEET_12;
-      case EducationCategory.GRADUATION:
-        return DocumentType.MARKSHEET_GRADUATION;
-      case EducationCategory.POST_GRADUATION:
-        return DocumentType.MARKSHEET_POST_GRADUATION;
-      default:
-        return DocumentType.OTHER_CERTIFICATE;
-    }
-  };
+  // SECTION 5: Declarations & Consents
+  const [accuracyConfirmed, setAccuracyConfirmed] = useState(true);
+  const [whatsappConsent, setWhatsappConsent] = useState(true);
 
-  // File Upload Handler
-  const handleFileUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    type: DocumentType,
-    onSuccess: (storageKey: string, fileName: string) => void,
-  ) => {
+  // Resume Upload Handler
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.type !== "application/pdf") {
+      alert("Please upload a valid PDF document for your Resume.");
+      return;
+    }
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size exceeds the 5 MB limit.");
+      alert("File size exceeds 5 MB limit.");
       return;
     }
 
     try {
-      const data = await uploadDocument(file, type);
-      onSuccess(data.storageKey, file.name);
-
-      if (type === DocumentType.PROFILE_PHOTO) {
-        setPhotoPreview(URL.createObjectURL(file));
-      }
+      setIsUploadingResume(true);
+      const data = await uploadDocument(file, DocumentType.RESUME);
+      setResumeDocId(data.storageKey);
+      setResumeFileName(file.name);
     } catch (err: any) {
-      alert(`Upload error: ${err.message}`);
+      alert(`Resume upload failed: ${err.message}`);
+    } finally {
+      setIsUploadingResume(false);
     }
   };
 
-  // Education Helpers
-  const updateEducationField = (index: number, field: string, val: any) => {
-    const updated = [...educationList];
-    updated[index][field] = val;
+  // Profile Photo Upload Handler
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    if (field === "totalMarks" || field === "obtainedMarks") {
-      const tot = parseFloat(field === "totalMarks" ? val : updated[index].totalMarks);
-      const obt = parseFloat(field === "obtainedMarks" ? val : updated[index].obtainedMarks);
-      if (tot > 0 && obt >= 0 && obt <= tot) {
-        updated[index].percentage = ((obt / tot) * 100).toFixed(2);
-      }
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file (JPG, PNG, WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Photo exceeds 5 MB limit.");
+      return;
     }
 
-    setEducationList(updated);
-  };
-
-  const addEducation = () => {
-    setEducationList([
-      ...educationList,
-      {
-        qualificationType: EducationCategory.OTHER,
-        degreeName: "",
-        institutionName: "",
-        universityOrBoard: "",
-        specialization: "",
-        passingYear: new Date().getFullYear(),
-        totalMarks: "",
-        obtainedMarks: "",
-        percentage: "",
-        cgpa: "",
-        gradingSystem: GradingSystem.PERCENTAGE,
-        marksheetDocId: "",
-      },
-    ]);
-  };
-
-  const removeEducation = (index: number) => {
-    if (educationList.length <= 1) return;
-    setEducationList(educationList.filter((_, i) => i !== index));
-  };
-
-  // Experience Helpers
-  const updateExperienceField = (index: number, field: string, val: any) => {
-    const updated = [...experienceList];
-    updated[index][field] = val;
-    if (field === "currentlyWorking" && val === true) {
-      updated[index].leavingDate = "";
-    }
-    setExperienceList(updated);
-  };
-
-  const addExperience = () => {
-    setExperienceList([
-      ...experienceList,
-      {
-        companyName: "",
-        companyAddress: "",
-        companyWebsite: "",
-        designation: "",
-        department: "",
-        employmentType: EmploymentType.FULL_TIME,
-        joiningDate: "",
-        leavingDate: "",
-        currentlyWorking: false,
-        totalExperienceMonths: 12,
-        lastDrawnSalary: "",
-        expectedSalary: "",
-        reasonForLeaving: "",
-        jobResponsibilities: "",
-        hrContactInfo: "",
-        experienceCertDocId: "",
-      },
-    ]);
-  };
-
-  const removeExperience = (index: number) => {
-    if (experienceList.length <= 1) return;
-    setExperienceList(experienceList.filter((_, i) => i !== index));
-  };
-
-  // Step Validation (5-step flow)
-  const validateStep = (currentStep: number): boolean => {
-    setErrorMessage(null);
-
-    // Step 1: Personal Details
-    if (currentStep === 1) {
-      if (!fullName.trim() || !fatherName.trim() || !motherName.trim() || !dob) {
-        setErrorMessage("Please complete your Full Name, Father's Name, Mother's Name, and Date of Birth.");
-        return false;
-      }
-      if (!gender) {
-        setErrorMessage("Gender selection is compulsory to proceed.");
-        return false;
-      }
-      const cleanMob = mobileNumber.replace(/\D/g, "");
-      if (cleanMob.length !== 10) {
-        setErrorMessage("Mobile Number must be exactly 10 digits.");
-        return false;
-      }
-      const cleanWa = whatsappNumber.replace(/\D/g, "");
-      if (cleanWa.length !== 10) {
-        setErrorMessage("WhatsApp Number must be exactly 10 digits.");
-        return false;
-      }
-      if (!email.trim() || !email.includes("@")) {
-        setErrorMessage("Please enter a valid email address.");
-        return false;
-      }
-    }
-    // Step 2: Education
-    else if (currentStep === 2) {
-      for (const edu of educationList) {
-        if (!edu.degreeName.trim() || !edu.institutionName.trim() || !edu.passingYear) {
-          setErrorMessage("Please provide degree, institution, and passing year details.");
-          return false;
-        }
-        if (edu.totalMarks && edu.obtainedMarks) {
-          if (parseFloat(edu.obtainedMarks) > parseFloat(edu.totalMarks)) {
-            setErrorMessage(`Obtained marks cannot exceed total marks for ${edu.degreeName}`);
-            return false;
-          }
-        }
-      }
-    }
-    // Step 3: Experience
-    else if (currentStep === 3) {
-      if (!isFresher) {
-        for (const exp of experienceList) {
-          if (!exp.companyName.trim() || !exp.designation.trim() || !exp.joiningDate) {
-            setErrorMessage("Please enter company name, designation, and valid joining date.");
-            return false;
-          }
-          if (!exp.currentlyWorking && exp.leavingDate) {
-            if (new Date(exp.leavingDate) < new Date(exp.joiningDate)) {
-              setErrorMessage(`Leaving date cannot be earlier than joining date for ${exp.companyName}`);
-              return false;
-            }
-          }
-        }
-      }
-    }
-    // Step 4: Documents (previously step 5)
-    else if (currentStep === 4) {
-      if (!resumeDocId) {
-        setErrorMessage("A valid Resume/CV (PDF) upload is required.");
-        return false;
-      }
-    }
-
-    return true;
-  };
-
-  const nextStep = () => {
-    if (validateStep(step)) {
-      setStep((s) => s + 1);
-      const el = document.getElementById("apply-form");
-      if (el) el.scrollIntoView({ behavior: "smooth" });
+    try {
+      setIsUploadingPhoto(true);
+      const data = await uploadDocument(file, DocumentType.PROFILE_PHOTO);
+      setProfilePhotoDocId(data.storageKey);
+      setPhotoPreview(URL.createObjectURL(file));
+    } catch (err: any) {
+      alert(`Photo upload failed: ${err.message}`);
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
-  const prevStep = () => {
-    setErrorMessage(null);
-    setStep((s) => s - 1);
-    const el = document.getElementById("apply-form");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
-
-  // Submit Handler
+  // 1-Page Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!accuracyConfirmed || !recruitmentProcessingConsent || !privacyPolicyAcknowledged) {
-      setErrorMessage("You must agree to the declarations and privacy terms to submit your application.");
+    // Validation
+    if (!fullName.trim() || !dob) {
+      setErrorMessage("Please provide your Full Name and Date of Birth.");
+      return;
+    }
+    if (!gender) {
+      setErrorMessage("Gender selection is compulsory to proceed.");
+      return;
+    }
+
+    const cleanMob = mobileNumber.replace(/\D/g, "");
+    if (cleanMob.length !== 10) {
+      setErrorMessage("Mobile Number must be exactly 10 numeric digits.");
+      return;
+    }
+
+    const cleanWa = whatsappNumber.replace(/\D/g, "");
+    if (cleanWa.length !== 10) {
+      setErrorMessage("WhatsApp Number must be exactly 10 numeric digits.");
+      return;
+    }
+
+    if (!email.trim() || !email.includes("@")) {
+      setErrorMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (!institutionName.trim()) {
+      setErrorMessage("Please enter your College / University name.");
+      return;
+    }
+
+    if (!resumeDocId) {
+      setErrorMessage("Please upload your Resume / CV (PDF format).");
+      return;
+    }
+
+    if (!accuracyConfirmed) {
+      setErrorMessage("Please acknowledge the declaration to proceed.");
       return;
     }
 
     setIsSubmitting(true);
 
-    const payload = {
-      fullName: fullName.trim(),
-      fatherName: fatherName.trim(),
-      motherName: motherName.trim(),
-      dateOfBirth: dob,
-      gender,
-      mobileNumber: mobileNumber.replace(/\D/g, ""),
-      whatsappNumber: whatsappNumber.replace(/\D/g, ""),
-      email: email.trim().toLowerCase(),
-      currentAddress: { street: "", city: "", state: "", pinCode: "" },
-      permanentAddress: { street: "", city: "", state: "", pinCode: "" },
-      isSameAddress: true,
-      profilePhotoDocId,
-      education: educationList.map((e) => ({
-        ...e,
-        passingYear: Number(e.passingYear),
-        totalMarks: e.totalMarks ? parseFloat(e.totalMarks) : undefined,
-        obtainedMarks: e.obtainedMarks ? parseFloat(e.obtainedMarks) : undefined,
-        percentage: e.percentage ? parseFloat(e.percentage) : undefined,
-        cgpa: e.cgpa ? parseFloat(e.cgpa) : undefined,
-      })),
-      isFresher,
-      experiences: isFresher
-        ? []
-        : experienceList.map((exp) => ({
-            ...exp,
-            totalExperienceMonths: Number(exp.totalExperienceMonths) || 0,
-            lastDrawnSalary: exp.lastDrawnSalary ? parseFloat(exp.lastDrawnSalary) : undefined,
-            expectedSalary: exp.expectedSalary ? parseFloat(exp.expectedSalary) : undefined,
-          })),
-      technicalSkills: ["AI/ML", "Full-Stack (MERN / MEAN)", "Database Architecture & Systems"],
-      professionalSkills: ["Problem Solving", "Team Collaboration", "System Design Logic"],
-      languagesKnown: ["English", "Hindi"],
-      noticePeriodDays: 0,
-      currentEmploymentStatus: isFresher ? "Fresher / Student" : "Experienced",
-      preferredJobLocation: "Hybrid / Remote",
-      expectedSalary: 0,
-      additionalInformation: "Direct Internship Cohort 2026 Application",
-      resumeDocId,
-      accuracyConfirmed,
-      recruitmentProcessingConsent,
-      privacyPolicyAcknowledged,
-      whatsappConsent,
-    };
-
     try {
+      const payload = {
+        fullName: fullName.trim(),
+        fatherName: "N/A",
+        motherName: "N/A",
+        dateOfBirth: dob,
+        gender,
+        mobileNumber: cleanMob,
+        whatsappNumber: cleanWa,
+        email: email.trim().toLowerCase(),
+        currentAddress: { street: "N/A", city: "N/A", state: "N/A", pinCode: "000000" },
+        permanentAddress: { street: "N/A", city: "N/A", state: "N/A", pinCode: "000000" },
+        isSameAddress: true,
+        profilePhotoDocId,
+        education: [
+          {
+            qualificationType: EducationCategory.GRADUATION,
+            degreeName: degreeName || "B.Tech / Degree",
+            institutionName: institutionName.trim(),
+            universityOrBoard: "University / State Board",
+            specialization: "Engineering / Computer Applications",
+            passingYear: Number(passingYear) || new Date().getFullYear(),
+            gradingSystem: GradingSystem.PERCENTAGE,
+          },
+        ],
+        isFresher: true,
+        technicalSkills: ["AI/ML Engineering", "MERN Stack", "MEAN Stack", "PostgreSQL", "Database Logic"],
+        professionalSkills: ["Analytical Thinking", "Problem Solving", "Teamwork"],
+        languagesKnown: ["English", "Hindi"],
+        noticePeriodDays: 0,
+        currentEmploymentStatus: "Student / Graduate",
+        preferredJobLocation: "Hybrid / Remote / Office",
+        expectedSalary: 0,
+        resumeDocId,
+        accuracyConfirmed: true,
+        recruitmentProcessingConsent: true,
+        privacyPolicyAcknowledged: true,
+        whatsappConsent,
+      };
+
       const res = await apiClient("/applications/submit", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
       setSubmissionSuccess(res);
-      window.scrollTo({ top: 300, behavior: "smooth" });
+      const el = document.getElementById("apply-form");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to submit application. Please check your entries.");
+      setErrorMessage(err.message || "Failed to submit application. Please check details and try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -390,22 +224,20 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* HEADER / NAVIGATION */}
-      <header className="border-b bg-white/95 backdrop-blur sticky top-0 z-50 shadow-sm">
+      {/* 1. BLACK BACKGROUND NAVBAR */}
+      <header className="border-b border-slate-800 bg-slate-950 sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center p-1.5 shadow-md shrink-0">
-              <img
-                src="/logo.webp"
-                alt="Emperor Smart Solutions Logo"
-                className="w-full h-full object-contain filter drop-shadow-sm"
-              />
-            </div>
+            <img
+              src="/logo.webp"
+              alt="Emperor Smart Solutions"
+              className="w-10 h-10 object-contain filter drop-shadow"
+            />
             <div>
-              <span className="font-extrabold text-lg text-slate-900 tracking-tight">
-                Emperor <span className="text-blue-600">Smart Solutions</span>
+              <span className="font-extrabold text-lg text-white tracking-tight">
+                Emperor <span className="text-blue-500">Smart Solutions</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-950/80 text-blue-400 rounded-md border border-blue-800/80">
                 Internship Portal
               </span>
             </div>
@@ -414,19 +246,19 @@ export default function HomePage() {
           <nav className="flex items-center space-x-4 sm:space-x-6">
             <a
               href="#curriculum"
-              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition"
+              className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
             >
               Curriculum & Benefits
             </a>
             <a
               href="#apply-form"
-              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition"
+              className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
             >
               Application Form
             </a>
             <Link
               href="/track"
-              className="text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 transition"
+              className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
             >
               Track Status
             </Link>
@@ -439,169 +271,98 @@ export default function HomePage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
 
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-semibold mb-6">
-            <Sparkles className="w-4 h-4 text-blue-400" /> 2026 Practical Full-Stack & AI Engineering Cohort
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-xs font-semibold mb-6">
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" /> Cohort Admissions Now Open
           </div>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-            Accelerate Your Tech Career With <br className="hidden sm:inline" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-300 to-indigo-300">
-              Real-World Industry Engineering
+            Advanced Full-Stack, AI/ML & <br />
+            <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-cyan-300 bg-clip-text text-transparent">
+              Enterprise Engineering Internship
             </span>
           </h1>
 
-          <p className="mt-6 text-base sm:text-xl text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Gain practical, production-level experience in modern engineering. Work directly with 
-            senior architects on <strong>AI/ML Integration</strong>, <strong>MERN & MEAN Stacks</strong>, 
-            and <strong>Enterprise Database Systems</strong>.
+          <p className="mt-6 text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
+            Fast-track your software engineering career with hands-on enterprise application development.
+            Master practical AI integration, MERN & MEAN full-stack architectures, database optimization,
+            and production deployment workflows.
           </p>
 
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="#apply-form"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition shadow-lg shadow-blue-600/30 text-sm"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5"
             >
-              Fill Application Form Directly <ArrowRight className="w-4 h-4" />
+              Apply Online Now <ChevronRight className="w-4 h-4" />
             </a>
-            <a
-              href="#curriculum"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 font-semibold hover:bg-slate-800 transition text-sm"
+            <Link
+              href="/track"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-700 transition"
             >
-              <Terminal className="w-4 h-4 text-blue-400" /> Explore What You Learn
-            </a>
+              <Search className="w-4 h-4" /> Track Existing Application
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* CURRICULUM & BENEFITS GRID */}
-      <section id="curriculum" className="py-16 sm:py-20 bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <h2 className="text-xs uppercase tracking-widest text-blue-600 font-bold">Comprehensive Curriculum</h2>
-            <p className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Master the Most In-Demand Technologies in 2026
-            </p>
-            <p className="mt-3 text-slate-600 text-sm sm:text-base">
-              Learn practical skills directly applied on live production architectures with mentor code reviews.
+      {/* CURRICULUM & KEY HIGHLIGHTS */}
+      <section id="curriculum" className="py-16 px-4 max-w-7xl mx-auto w-full">
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Industry Technologies You Will Master
+          </h2>
+          <p className="mt-3 text-slate-600 text-sm sm:text-base">
+            Gain genuine enterprise development exposure working on scalable production systems.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4">
+              <Cpu className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-2">Artificial Intelligence & ML</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              LLM integrations, prompt engineering pipelines, autonomous agents, neural model APIs, and intelligent data systems.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* AI & ML */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-4">
-                <Cpu className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">AI & Machine Learning (AI / ML)</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Hands-on Generative AI, Large Language Model (LLM) orchestration, prompt engineering, agentic tools, vector search (RAG), and neural network automation pipelines.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["LLMs", "LangChain", "Vector RAG", "Python ML", "Computer Vision"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-semibold rounded-md border border-blue-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
+          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4">
+              <Layers className="w-6 h-6" />
             </div>
+            <h3 className="font-bold text-slate-900 text-base mb-2">MERN & MEAN Stacks</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              React 19, Next.js 15, Angular, Node.js, Express, NestJS, and state management for scalable frontend applications.
+            </p>
+          </div>
 
-            {/* MERN & MEAN STACKS */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center mb-4">
-                <Layers className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Full-Stack MERN & MEAN</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                React 19 & Next.js 15 App Router, Angular reactive architectures, Express & NestJS microservices, and end-to-end TypeScript type safety.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["React 19", "Next.js 15", "Angular", "NestJS", "Node.js", "TypeScript"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-teal-50 text-teal-700 text-[10px] font-semibold rounded-md border border-teal-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
+          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
+              <Database className="w-6 h-6" />
             </div>
+            <h3 className="font-bold text-slate-900 text-base mb-2">Database Logic & Schema</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              PostgreSQL relational modeling, Prisma ORM, Redis caching, indexing, indexing strategies, and transactional queries.
+            </p>
+          </div>
 
-            {/* DATABASE LOGIC */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-4">
-                <Database className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Database Logic & Architecture</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Relational schema design with PostgreSQL & Prisma, NoSQL with MongoDB, distributed caching with Redis, message queues (BullMQ), and ACID business logic.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["PostgreSQL", "MongoDB", "Redis", "BullMQ", "ACID Logic", "Indexing"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-semibold rounded-md border border-indigo-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
+          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
+            <div className="w-12 h-12 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center mb-4">
+              <GitBranch className="w-6 h-6" />
             </div>
-
-            {/* DEVOPS & PRODUCTION */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
-                <Server className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">DevOps & Cloud Systems</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Multi-stage Docker containerization, Linux VPS administration, Nginx reverse proxy configuration, SSL certificates, and automated CI/CD workflows.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["Docker", "Nginx", "Linux VPS", "CI/CD", "SSL/TLS", "Microservices"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-semibold rounded-md border border-amber-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* CERTIFICATE & RECOMMENDATION */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                <Award className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Certificate & Letter of Recommendation</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                Receive an official, verifiable Certificate of Internship Completion and an architectural Letter of Recommendation (LOR) for top performers.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["Verified Certificate", "LOR", "GitHub Portfolio", "Code Reviews"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-semibold rounded-md border border-emerald-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* MENTORSHIP & REAL WORK */}
-            <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-blue-300 hover:shadow-md transition">
-              <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-4">
-                <Code2 className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-900">Real Production Codebase</h3>
-              <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                No trivial toy apps. You write real code deployed to real servers, handle live API integrations, and review pull requests with seasoned lead architects.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {["Live Projects", "Production VPS", "Team PRs", "1-on-1 Guidance"].map((t) => (
-                  <span key={t} className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-semibold rounded-md border border-purple-200">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <h3 className="font-bold text-slate-900 text-base mb-2">DevOps & Cloud Deployment</h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Docker containerization, Nginx reverse proxies, Linux server management, SSL certificates, and CI/CD deployment pipelines.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* DIRECT APPLICATION FORM SECTION */}
-      <section id="apply-form" className="py-16 px-4 max-w-4xl mx-auto w-full flex-1">
+      {/* 2. SINGLE-PAGE APPLICATION FORM */}
+      <section id="apply-form" className="py-12 px-4 max-w-4xl mx-auto w-full flex-1">
         {submissionSuccess ? (
-          <div className="bg-white border border-emerald-200 rounded-3xl p-8 sm:p-12 text-center shadow-xl">
+          <div className="bg-white border border-emerald-200 rounded-3xl p-8 sm:p-12 text-center shadow-xl animate-in fade-in duration-200">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10" />
             </div>
@@ -631,7 +392,6 @@ export default function HomePage() {
                 type="button"
                 onClick={() => {
                   setSubmissionSuccess(null);
-                  setStep(1);
                 }}
                 className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200 transition"
               >
@@ -640,8 +400,8 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-lg">
+            <div className="text-center mb-8 pb-6 border-b border-slate-100">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-2">
                 <ShieldCheck className="w-3.5 h-3.5" /> Direct Candidate Application
               </div>
@@ -649,742 +409,375 @@ export default function HomePage() {
                 Internship Application Form
               </h2>
               <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                Fill in your accurate details to apply directly for the upcoming internship cohort.
+                Fill in your accurate details below to apply directly for the upcoming internship cohort.
               </p>
             </div>
 
-            {/* 5-Step Wizard Progress Bar (Skills removed) */}
-            <div className="grid grid-cols-5 gap-2 text-center text-xs font-semibold">
-              {[
-                { num: 1, label: "Personal", icon: User },
-                { num: 2, label: "Education", icon: GraduationCap },
-                { num: 3, label: "Experience", icon: Briefcase },
-                { num: 4, label: "Documents", icon: FileUp },
-                { num: 5, label: "Consent", icon: CheckCircle2 },
-              ].map((item) => (
-                <div
-                  key={item.num}
-                  className={`p-2.5 rounded-xl border transition ${
-                    step === item.num
-                      ? "bg-blue-600 text-white border-blue-600 shadow-md"
-                      : step > item.num
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-white text-slate-400 border-slate-200"
-                  }`}
-                >
-                  <item.icon className="w-4 h-4 mx-auto mb-1" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Error Banner */}
             {errorMessage && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs sm:text-sm flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600" />
-                <span>{errorMessage}</span>
+              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-700 text-xs sm:text-sm">
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+                <span className="font-medium">{errorMessage}</span>
               </div>
             )}
 
-            {/* Form Container Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-10 shadow-sm">
-              {/* STEP 1: PERSONAL INFORMATION */}
-              {step === 1 && (
-                <div className="space-y-6">
-                  <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <User className="w-5 h-5 text-blue-600" /> Section A: Personal Information
-                  </h3>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* SECTION A: PERSONAL DETAILS */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <User className="w-4 h-4" /> Personal Information
+                </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Candidate full name"
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Father's Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={fatherName}
-                        onChange={(e) => setFatherName(e.target.value)}
-                        placeholder="Father's full name"
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Mother's Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={motherName}
-                        onChange={(e) => setMotherName(e.target.value)}
-                        placeholder="Mother's full name"
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* PREMIUM DATE OF BIRTH PICKER */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Date of Birth <span className="text-red-500">*</span>
-                      </label>
-                      <PremiumDatePicker
-                        value={dob}
-                        onChange={setDob}
-                        placeholder="Select Date of Birth"
-                        minYear={1975}
-                        maxYear={new Date().getFullYear() - 14}
-                        required
-                      />
-                    </div>
-
-                    {/* MANDATORY GENDER SELECTION */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Gender <span className="text-red-500">* (MANDATORY)</span>
-                      </label>
-                      <select
-                        required
-                        value={gender}
-                        onChange={(e) => setGender(e.target.value as Gender)}
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium shadow-sm"
-                      >
-                        <option value="" disabled>
-                          -- Select Compulsory Gender Option --
-                        </option>
-                        <option value={Gender.MALE}>Male</option>
-                        <option value={Gender.FEMALE}>Female</option>
-                        <option value={Gender.OTHER}>Other</option>
-                        <option value={Gender.PREFER_NOT_TO_DISCLOSE}>Prefer not to disclose</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* 10-DIGIT VALIDATED MOBILE & WHATSAPP NUMBERS */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Mobile Number <span className="text-red-500">*</span>
-                        </label>
-                        <span className={`text-[10px] font-bold ${mobileNumber.length === 10 ? "text-emerald-600" : "text-slate-400"}`}>
-                          {mobileNumber.length === 10 ? "10/10 ✓" : `${mobileNumber.length}/10 digits`}
-                        </span>
-                      </div>
-                      <input
-                        type="tel"
-                        required
-                        maxLength={10}
-                        placeholder="10-digit mobile number"
-                        value={mobileNumber}
-                        onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                          mobileNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          WhatsApp Number <span className="text-red-500">*</span>
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setWhatsappNumber(mobileNumber)}
-                          className="text-[10px] text-blue-600 hover:underline font-semibold"
-                        >
-                          Same as Mobile
-                        </button>
-                      </div>
-                      <input
-                        type="tel"
-                        required
-                        maxLength={10}
-                        placeholder="10-digit WhatsApp number"
-                        value={whatsappNumber}
-                        onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                        className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
-                          whatsappNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <div className="mb-1">
-                        <label className="block text-xs font-semibold text-slate-700">
-                          Email Address <span className="text-red-500">*</span>
-                        </label>
-                      </div>
-                      <input
-                        type="email"
-                        required
-                        placeholder="candidate@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Profile Photo */}
-                  <div className="pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Profile Photograph (JPG, PNG, WEBP max 5MB)
+                      Full Name <span className="text-red-500">*</span>
                     </label>
-                    <div className="flex items-center gap-4">
-                      {photoPreview && (
-                        <img
-                          src={photoPreview}
-                          alt="Preview"
-                          className="w-16 h-16 rounded-full object-cover border-2 border-blue-500 shadow-sm"
-                        />
-                      )}
-                      <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-xl text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 transition shadow-sm">
-                        <Upload className="w-4 h-4 text-slate-500" />
-                        <span>Upload Photo</span>
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
-                          onChange={(e) =>
-                            handleFileUpload(e, DocumentType.PROFILE_PHOTO, (id) =>
-                              setProfilePhotoDocId(id),
-                            )
-                          }
-                        />
-                      </label>
-                      {profilePhotoDocId && (
-                        <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                          <Check className="w-3.5 h-3.5" /> Uploaded & Verified
-                        </span>
-                      )}
-                    </div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    />
                   </div>
-                </div>
-              )}
 
-              {/* STEP 2: EDUCATION */}
-              {step === 2 && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                      <GraduationCap className="w-5 h-5 text-blue-600" /> Section B: Educational Qualifications
-                    </h3>
-                    <button
-                      type="button"
-                      onClick={addEducation}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <PremiumDatePicker
+                      value={dob}
+                      onChange={setDob}
+                      placeholder="Select Date of Birth"
+                      minYear={1975}
+                      maxYear={new Date().getFullYear() - 14}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Gender <span className="text-red-500">* (MANDATORY)</span>
+                    </label>
+                    <select
+                      required
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as Gender)}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Add Qualification
-                    </button>
+                      <option value="" disabled>-- Select Gender --</option>
+                      <option value={Gender.MALE}>Male</option>
+                      <option value={Gender.FEMALE}>Female</option>
+                      <option value={Gender.OTHER}>Other</option>
+                      <option value={Gender.PREFER_NOT_TO_DISCLOSE}>Prefer not to disclose</option>
+                    </select>
                   </div>
-
-                  {educationList.map((edu, idx) => (
-                    <div key={idx} className="p-5 border border-slate-200 rounded-xl bg-slate-50/60 space-y-4 relative">
-                      {educationList.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeEducation(idx)}
-                          className="absolute top-4 right-4 text-red-500 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Category</label>
-                          <select
-                            value={edu.qualificationType}
-                            onChange={(e) => updateEducationField(idx, "qualificationType", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
-                          >
-                            <option value={EducationCategory.CLASS_10}>10th Standard</option>
-                            <option value={EducationCategory.CLASS_12}>12th Standard</option>
-                            <option value={EducationCategory.DIPLOMA}>Diploma</option>
-                            <option value={EducationCategory.GRADUATION}>Graduation (B.E/B.Tech/BCA/B.Sc)</option>
-                            <option value={EducationCategory.POST_GRADUATION}>Post Graduation (MCA/M.Tech/MBA)</option>
-                            <option value={EducationCategory.OTHER}>Other</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Degree / Course</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. B.Tech Computer Science"
-                            value={edu.degreeName}
-                            onChange={(e) => updateEducationField(idx, "degreeName", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Specialization</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Software Engineering"
-                            value={edu.specialization}
-                            onChange={(e) => updateEducationField(idx, "specialization", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">College / School</label>
-                          <input
-                            type="text"
-                            placeholder="Institution name"
-                            value={edu.institutionName}
-                            onChange={(e) => updateEducationField(idx, "institutionName", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">University / Board</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. AKTU / CBSE"
-                            value={edu.universityOrBoard}
-                            onChange={(e) => updateEducationField(idx, "universityOrBoard", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Passing Year</label>
-                          <input
-                            type="number"
-                            value={edu.passingYear}
-                            onChange={(e) => updateEducationField(idx, "passingYear", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Marks & Auto Percentage */}
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Grading System</label>
-                          <select
-                            value={edu.gradingSystem}
-                            onChange={(e) => updateEducationField(idx, "gradingSystem", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs bg-white"
-                          >
-                            <option value={GradingSystem.PERCENTAGE}>Percentage</option>
-                            <option value={GradingSystem.CGPA_10}>CGPA (10-point)</option>
-                            <option value={GradingSystem.CGPA_4}>CGPA (4-point)</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Total Marks</label>
-                          <input
-                            type="number"
-                            placeholder="e.g. 1000"
-                            value={edu.totalMarks}
-                            onChange={(e) => updateEducationField(idx, "totalMarks", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Obtained Marks</label>
-                          <input
-                            type="number"
-                            placeholder="e.g. 850"
-                            value={edu.obtainedMarks}
-                            onChange={(e) => updateEducationField(idx, "obtainedMarks", e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg text-xs"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-semibold text-slate-700 mb-1">Calculated Percentage</label>
-                          <input
-                            type="text"
-                            readOnly
-                            placeholder="Auto-calculated"
-                            value={edu.percentage ? `${edu.percentage}%` : ""}
-                            className="w-full px-3 py-2 border rounded-lg text-xs bg-slate-100 font-bold text-blue-700"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Marksheet Upload */}
-                      <div className="pt-2 flex items-center gap-3">
-                        <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-xs text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm">
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Marksheet</span>
-                          <input
-                            type="file"
-                            accept=".pdf,image/*"
-                            className="hidden"
-                            onChange={(e) =>
-                              handleFileUpload(e, getDocTypeForEdu(edu.qualificationType), (id) =>
-                                updateEducationField(idx, "marksheetDocId", id),
-                              )
-                            }
-                          />
-                        </label>
-                        {edu.marksheetDocId && (
-                          <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                            <Check className="w-3.5 h-3.5" /> Marksheet Uploaded
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              )}
+              </div>
 
-              {/* STEP 3: WORK EXPERIENCE */}
-              {step === 3 && (
-                <div className="space-y-6">
-                  <div className="border-b pb-3">
-                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-blue-600" /> Section C: Experience / Fresher Status
-                    </h3>
+              {/* SECTION B: CONTACT DETAILS */}
+              <div className="space-y-4 pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <Phone className="w-4 h-4" /> Contact Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        Mobile Number <span className="text-red-500">*</span>
+                      </label>
+                      <span className={`text-[10px] font-bold ${mobileNumber.length === 10 ? "text-emerald-600" : "text-slate-400"}`}>
+                        {mobileNumber.length === 10 ? "10/10 ✓" : `${mobileNumber.length}/10 digits`}
+                      </span>
+                    </div>
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      placeholder="10-digit mobile number"
+                      value={mobileNumber}
+                      onChange={(e) => setMobileNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
+                        mobileNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
+                      }`}
+                    />
                   </div>
 
-                  <div className="p-4 rounded-xl bg-slate-50 border flex items-center justify-between">
-                    <div>
-                      <span className="text-sm font-bold text-slate-900">Are you a Fresher or Experienced?</span>
-                      <p className="text-xs text-slate-500">
-                        Select Fresher if you are a student or haven't held a previous full-time corporate role.
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-700">
+                        WhatsApp Number <span className="text-red-500">*</span>
+                      </label>
                       <button
                         type="button"
-                        onClick={() => setIsFresher(true)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition ${
-                          isFresher
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "bg-white border text-slate-700 hover:bg-slate-50"
-                        }`}
+                        onClick={() => setWhatsappNumber(mobileNumber)}
+                        className="text-[10px] text-blue-600 hover:underline font-semibold"
                       >
-                        Fresher
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsFresher(false)}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition ${
-                          !isFresher
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "bg-white border text-slate-700 hover:bg-slate-50"
-                        }`}
-                      >
-                        Experienced
+                        Same as Mobile
                       </button>
                     </div>
+                    <input
+                      type="tel"
+                      required
+                      maxLength={10}
+                      placeholder="10-digit WhatsApp number"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                      className={`w-full px-3.5 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${
+                        whatsappNumber.length === 10 ? "border-emerald-500 ring-1 ring-emerald-500/20" : "border-slate-300"
+                      }`}
+                    />
                   </div>
 
-                  {!isFresher && (
-                    <div className="space-y-4">
-                      {experienceList.map((exp, idx) => (
-                        <div key={idx} className="p-5 border border-slate-200 rounded-xl bg-slate-50/60 space-y-4 relative">
-                          {experienceList.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeExperience(idx)}
-                              className="absolute top-4 right-4 text-red-500 hover:text-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. rahul@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1">Company Name</label>
-                              <input
-                                type="text"
-                                placeholder="Company name"
-                                value={exp.companyName}
-                                onChange={(e) => updateExperienceField(idx, "companyName", e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-xs"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1">Designation</label>
-                              <input
-                                type="text"
-                                placeholder="e.g. Junior Developer"
-                                value={exp.designation}
-                                onChange={(e) => updateExperienceField(idx, "designation", e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-xs"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                              <input
-                                type="text"
-                                placeholder="e.g. Engineering"
-                                value={exp.department}
-                                onChange={(e) => updateExperienceField(idx, "department", e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-xs"
-                              />
-                            </div>
-                          </div>
+              {/* SECTION C: EDUCATION */}
+              <div className="space-y-4 pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <GraduationCap className="w-4 h-4" /> Educational Details
+                </h3>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1">Joining Date</label>
-                              <input
-                                type="date"
-                                value={exp.joiningDate}
-                                onChange={(e) => updateExperienceField(idx, "joiningDate", e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-xs"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-semibold text-slate-700 mb-1">Leaving Date</label>
-                              <input
-                                type="date"
-                                disabled={exp.currentlyWorking}
-                                value={exp.leavingDate}
-                                onChange={(e) => updateExperienceField(idx, "leavingDate", e.target.value)}
-                                className="w-full px-3 py-2 border rounded-lg text-xs disabled:bg-slate-100"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2 pt-6">
-                              <input
-                                type="checkbox"
-                                id={`curWork-${idx}`}
-                                checked={exp.currentlyWorking}
-                                onChange={(e) => updateExperienceField(idx, "currentlyWorking", e.target.checked)}
-                                className="w-4 h-4 text-blue-600 rounded"
-                              />
-                              <label htmlFor={`curWork-${idx}`} className="text-xs font-semibold text-slate-700">
-                                Currently Working Here
-                              </label>
-                            </div>
-                          </div>
-                        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Degree / Qualification <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={degreeName}
+                      onChange={(e) => setDegreeName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
+                    >
+                      <option value="B.Tech / B.E (Computer Science & Engineering)">B.Tech / B.E (CSE / IT)</option>
+                      <option value="B.Tech / B.E (Other Branch)">B.Tech / B.E (Other)</option>
+                      <option value="BCA (Bachelor of Computer Applications)">BCA</option>
+                      <option value="MCA (Master of Computer Applications)">MCA</option>
+                      <option value="B.Sc (Computer Science / IT)">B.Sc (CS / IT)</option>
+                      <option value="Diploma in Engineering">Diploma</option>
+                      <option value="Other Graduate / Post-Graduate Degree">Other Degree</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      College / University Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Gujarat Technological University"
+                      value={institutionName}
+                      onChange={(e) => setInstitutionName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1">
+                      Passing Year <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={passingYear}
+                      onChange={(e) => setPassingYear(Number(e.target.value))}
+                      className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium"
+                    >
+                      {[2028, 2027, 2026, 2025, 2024, 2023, 2022, 2021].map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
                       ))}
-
-                      <button
-                        type="button"
-                        onClick={addExperience}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add Another Experience
-                      </button>
-                    </div>
-                  )}
+                    </select>
+                  </div>
                 </div>
-              )}
+              </div>
 
-              {/* STEP 4: DOCUMENT UPLOADS */}
-              {step === 4 && (
-                <div className="space-y-6">
-                  <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <FileUp className="w-5 h-5 text-blue-600" /> Section D: Document Uploads
-                  </h3>
+              {/* SECTION D: DOCUMENT UPLOADS */}
+              <div className="space-y-4 pt-6 border-t border-slate-100">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-blue-600 flex items-center gap-2">
+                  <FileUp className="w-4 h-4" /> Resume & Photo
+                </h3>
 
-                  <div className="p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 text-center space-y-4">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-sm">
-                      <FileUp className="w-7 h-7" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* RESUME UPLOAD */}
+                  <div className="p-6 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50/70 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto shadow-xs">
+                      <FileUp className="w-6 h-6" />
                     </div>
                     <div>
-                      <span className="font-extrabold text-base text-slate-900 block">Upload Your Resume / CV</span>
-                      <p className="text-xs text-slate-500 mt-1">PDF format only, maximum allowed size 5 MB</p>
+                      <span className="font-extrabold text-sm text-slate-900 block">
+                        Upload Resume / CV <span className="text-red-500">*</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500 mt-0.5">PDF format only, maximum 5 MB</p>
                     </div>
 
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-sm">
-                      <Upload className="w-4 h-4" />
-                      <span>{resumeDocId ? "Change Resume PDF" : "Choose Resume PDF"}</span>
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-xs">
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{resumeDocId ? "Change Resume PDF" : "Choose Resume PDF"}</span>
+                        </>
+                      )}
                       <input
                         type="file"
                         accept="application/pdf"
-                        className="hidden"
-                        onChange={(e) =>
-                          handleFileUpload(e, DocumentType.RESUME, (storageKey, fileName) => {
-                            setResumeDocId(storageKey);
-                            setResumeFileName(fileName);
-                          })
-                        }
+                        disabled={isUploadingResume}
+                        onChange={handleResumeUpload}
+                        className="sr-only"
                       />
                     </label>
 
                     {resumeDocId && (
-                      <div className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1.5 pt-2">
-                        <Check className="w-4 h-4" /> Verified & Uploaded: {resumeFileName || "resume.pdf"}
+                      <div className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1.5 pt-1">
+                        <Check className="w-4 h-4" /> Uploaded: {resumeFileName || "resume.pdf"}
                       </div>
                     )}
                   </div>
-                </div>
-              )}
 
-              {/* STEP 5: DECLARATION & CONSENT */}
-              {step === 5 && (
-                <div className="space-y-6">
-                  <h3 className="text-base font-bold text-slate-900 border-b pb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-blue-600" /> Section E: Declaration & Consent
-                  </h3>
-
-                  <div className="space-y-4 text-xs text-slate-700 bg-slate-50 p-6 rounded-2xl border border-slate-200">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        required
-                        checked={accuracyConfirmed}
-                        onChange={(e) => setAccuracyConfirmed(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded mt-0.5"
-                      />
-                      <span>
-                        <strong className="text-slate-900">Information Accuracy:</strong> I declare that all 
-                        information, educational credentials, and documents provided in this form are genuine and accurate.
-                      </span>
-                    </label>
-
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        required
-                        checked={recruitmentProcessingConsent}
-                        onChange={(e) => setRecruitmentProcessingConsent(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded mt-0.5"
-                      />
-                      <span>
-                        <strong className="text-slate-900">Data Processing:</strong> I authorize Emperor Smart Solutions 
-                        to process my recruitment application data for assessment and internship selection.
-                      </span>
-                    </label>
-
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        required
-                        checked={privacyPolicyAcknowledged}
-                        onChange={(e) => setPrivacyPolicyAcknowledged(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded mt-0.5"
-                      />
-                      <span>
-                        <strong className="text-slate-900">Privacy Policy:</strong> I acknowledge and agree to 
-                        the enterprise data privacy terms and security guidelines.
-                      </span>
-                    </label>
-
-                    <div className="pt-2 border-t border-slate-200">
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={whatsappConsent}
-                          onChange={(e) => setWhatsappConsent(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded mt-0.5"
-                        />
-                        <span>
-                          <strong className="text-slate-900">WhatsApp Notification Opt-In (Optional):</strong> I 
-                          consent to receive real-time interview reminders and application status updates via WhatsApp.
-                        </span>
-                      </label>
+                  {/* PROFILE PHOTO UPLOAD (OPTIONAL) */}
+                  <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50/70 text-center space-y-3">
+                    <div className="w-12 h-12 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto overflow-hidden">
+                      {photoPreview ? (
+                        <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-6 h-6" />
+                      )}
                     </div>
+                    <div>
+                      <span className="font-bold text-sm text-slate-900 block">
+                        Profile Photo <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                      </span>
+                      <p className="text-[11px] text-slate-500 mt-0.5">JPG, PNG, WEBP (max 5MB)</p>
+                    </div>
+
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-300 transition">
+                      {isUploadingPhoto ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{photoPreview ? "Change Photo" : "Upload Photo"}</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingPhoto}
+                        onChange={handlePhotoUpload}
+                        className="sr-only"
+                      />
+                    </label>
                   </div>
                 </div>
-              )}
-
-              {/* Wizard Nav Buttons (5 steps total) */}
-              <div className="mt-8 pt-6 border-t flex items-center justify-between">
-                {step > 1 ? (
-                  <button
-                    type="button"
-                    onClick={prevStep}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 transition shadow-sm"
-                  >
-                    <ChevronLeft className="w-4 h-4" /> Previous
-                  </button>
-                ) : (
-                  <div />
-                )}
-
-                {step < 5 ? (
-                  <button
-                    type="button"
-                    onClick={nextStep}
-                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-semibold hover:bg-blue-700 transition shadow-sm"
-                  >
-                    Next Step <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={isSubmitting}
-                    onClick={handleSubmit}
-                    className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-emerald-700 transition shadow-md disabled:opacity-50"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Submitting Application...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" /> Complete & Submit Application
-                      </>
-                    )}
-                  </button>
-                )}
               </div>
-            </div>
+
+              {/* SECTION E: DECLARATIONS & CONSENT */}
+              <div className="pt-6 border-t border-slate-100 space-y-3 text-xs text-slate-700">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={accuracyConfirmed}
+                    onChange={(e) => setAccuracyConfirmed(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded mt-0.5"
+                  />
+                  <span>
+                    <strong className="text-slate-900">Information Accuracy:</strong> I confirm that all educational
+                    qualifications, credentials, and uploaded documents are genuine and accurate.
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={whatsappConsent}
+                    onChange={(e) => setWhatsappConsent(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded mt-0.5"
+                  />
+                  <span>
+                    <strong className="text-slate-900">WhatsApp Notification Opt-In:</strong> I consent to receive
+                    real-time interview scheduling, meeting details, and status updates via WhatsApp.
+                  </span>
+                </label>
+              </div>
+
+              {/* SUBMIT BUTTON */}
+              <div className="pt-4">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-base shadow-lg shadow-blue-500/25 transition flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" /> Submitting Application...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-5 h-5" /> Submit Internship Application
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         )}
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t bg-white py-10 text-xs text-slate-500">
+      {/* 3. BLACK BACKGROUND FOOTER */}
+      <footer className="border-t border-slate-800 bg-slate-950 py-12 text-xs text-slate-400">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
           <div>
             <div className="flex items-center gap-2.5 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center p-1 shadow-sm shrink-0">
-                <img
-                  src="/logo.webp"
-                  alt="Emperor Smart Solutions"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <span className="font-bold text-sm text-slate-900">Emperor Smart Solutions</span>
+              <img
+                src="/logo.webp"
+                alt="Emperor Smart Solutions"
+                className="w-8 h-8 object-contain"
+              />
+              <span className="font-bold text-sm text-white">Emperor Smart Solutions</span>
             </div>
-            <p className="text-slate-500 text-xs leading-relaxed">
+            <p className="text-slate-400 text-xs leading-relaxed">
               Industry recruitment and internship management platform.
             </p>
-            <p className="mt-3 text-slate-400">© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
+            <p className="mt-3 text-slate-500">© {new Date().getFullYear()} Emperor Smart Solutions Pvt Ltd. All rights reserved.</p>
           </div>
 
           <div>
-            <span className="font-bold text-xs uppercase tracking-wider text-slate-900 block mb-2">
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-200 block mb-2">
               Admissions & Office
             </span>
-            <p className="text-slate-600 leading-relaxed font-medium">
+            <p className="text-slate-400 leading-relaxed font-medium">
               202, Shitiratna Complex, Panchvati, Navrangpura, Ahmedabad - 380009, Gujarat, India
             </p>
           </div>
 
           <div>
-            <span className="font-bold text-xs uppercase tracking-wider text-slate-900 block mb-2">
+            <span className="font-bold text-xs uppercase tracking-wider text-slate-200 block mb-2">
               Quick Links
             </span>
             <div className="flex flex-col space-y-2">
-              <a href="#curriculum" className="hover:text-blue-600 font-medium">Internship Program</a>
-              <Link href="/track" className="hover:text-blue-600 font-medium">Application Tracking</Link>
+              <a href="#curriculum" className="hover:text-white font-medium transition">Internship Program</a>
+              <Link href="/track" className="hover:text-white font-medium transition">Application Tracking</Link>
             </div>
           </div>
         </div>

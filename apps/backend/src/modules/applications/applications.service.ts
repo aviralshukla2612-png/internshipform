@@ -167,8 +167,8 @@ export class ApplicationsService {
           data: {
             applicationCode,
             fullName: dto.fullName.trim(),
-            fatherName: dto.fatherName.trim(),
-            motherName: dto.motherName.trim(),
+            fatherName: (dto.fatherName || 'N/A').trim(),
+            motherName: (dto.motherName || 'N/A').trim(),
             dateOfBirth: new Date(dto.dateOfBirth),
             gender: dto.gender as any,
             mobileNumber: cleanMobile,
@@ -183,8 +183,8 @@ export class ApplicationsService {
           where: { id: candidate.id },
           data: {
             fullName: dto.fullName.trim(),
-            fatherName: dto.fatherName.trim(),
-            motherName: dto.motherName.trim(),
+            fatherName: (dto.fatherName || 'N/A').trim(),
+            motherName: (dto.motherName || 'N/A').trim(),
             dateOfBirth: new Date(dto.dateOfBirth),
             gender: dto.gender as any,
             mobileNumber: cleanMobile,

@@ -63,8 +63,8 @@ export interface CandidateApplicationSubmissionDto {
   
   // Section A: Personal Information
   fullName: string;
-  fatherName: string;
-  motherName: string;
+  fatherName?: string;
+  motherName?: string;
   dateOfBirth: string; // ISO date string
   gender: Gender; // MANDATORY
   mobileNumber: string;
