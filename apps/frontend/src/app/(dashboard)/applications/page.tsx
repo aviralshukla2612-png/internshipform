@@ -17,6 +17,8 @@ import {
   Loader2,
   Calendar,
   AlertTriangle,
+  X,
+  Maximize2,
 } from "lucide-react";
 import { ApplicationStatus, Gender } from "@recruitment/shared";
 
@@ -35,6 +37,9 @@ export default function ApplicationsPage() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkTargetStatus, setBulkTargetStatus] = useState<ApplicationStatus>(ApplicationStatus.SHORTLISTED);
   const [bulkReason, setBulkReason] = useState("");
+
+  // Photo Zoom Lightbox Modal
+  const [previewPhoto, setPreviewPhoto] = useState<{ url: string; name: string; code: string } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["applicationsList", page, pageSize, search, selectedStatus, selectedGender, isFresherFilter],
@@ -217,11 +222,10 @@ export default function ApplicationsPage() {
               setSelectedGender("");
               setPage(1);
             }}
-            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-              selectedGender === ""
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedGender === ""
                 ? "bg-white text-blue-600 shadow-xs border border-slate-200"
                 : "text-slate-500 hover:text-slate-800"
-            }`}
+              }`}
           >
             All Genders
           </button>
@@ -231,11 +235,10 @@ export default function ApplicationsPage() {
               setSelectedGender(Gender.MALE);
               setPage(1);
             }}
-            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-              selectedGender === Gender.MALE
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedGender === Gender.MALE
                 ? "bg-blue-600 text-white shadow-xs"
                 : "text-slate-500 hover:text-slate-800"
-            }`}
+              }`}
           >
             Male
           </button>
@@ -245,11 +248,10 @@ export default function ApplicationsPage() {
               setSelectedGender(Gender.FEMALE);
               setPage(1);
             }}
-            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${
-              selectedGender === Gender.FEMALE
+            className={`px-3 py-1 rounded-md text-xs font-semibold transition ${selectedGender === Gender.FEMALE
                 ? "bg-blue-600 text-white shadow-xs"
                 : "text-slate-500 hover:text-slate-800"
-            }`}
+              }`}
           >
             Female
           </button>
@@ -329,9 +331,43 @@ export default function ApplicationsPage() {
                       </td>
 
                       <td className="p-3">
-                        <div className="font-bold text-slate-900">{app.candidate.fullName}</div>
-                        <div className="text-[11px] text-slate-500">{app.candidate.email}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">{app.candidate.mobileNumber}</div>
+                        <div className="flex items-center gap-3">
+                          {app.candidate.profilePhotoDocId ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setPreviewPhoto({
+                                  url: `/api/v1/documents/view/${app.candidate.profilePhotoDocId}`,
+                                  name: app.candidate.fullName,
+                                  code: app.applicationCode,
+                                })
+                              }
+                              className="relative group shrink-0 focus:outline-none"
+                              title="Click to view full photo"
+                            >
+                              <img
+                                src={`/api/v1/documents/view/${app.candidate.profilePhotoDocId}`}
+                                alt={app.candidate.fullName}
+                                className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 group-hover:border-blue-500 shadow-xs transition transform group-hover:scale-105"
+                              />
+                              <div className="absolute inset-0 bg-black/25 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                <Maximize2 className="w-3.5 h-3.5 text-white drop-shadow" />
+                              </div>
+                            </button>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                              {app.candidate.fullName ? app.candidate.fullName.charAt(0).toUpperCase() : "U"}
+                            </div>
+                          )}
+
+                          <div className="min-w-0">
+                            <div className="font-bold text-slate-900 truncate">{app.candidate.fullName}</div>
+                            <div className="text-[11px] text-slate-500 truncate">{app.candidate.email}</div>
+                            <div className="text-[10px] text-slate-400 font-mono truncate">
+                              {app.candidate.whatsappNumber || app.candidate.mobileNumber}
+                            </div>
+                          </div>
+                        </div>
                       </td>
 
                       <td className="p-3">
@@ -468,11 +504,10 @@ export default function ApplicationsPage() {
                       )}
                       <button
                         onClick={() => setPage(p)}
-                        className={`w-7 h-7 rounded-md font-bold text-xs transition ${
-                          page === p
+                        className={`w-7 h-7 rounded-md font-bold text-xs transition ${page === p
                             ? "bg-blue-600 text-white shadow-xs"
                             : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-100"
-                        }`}
+                          }`}
                       >
                         {p}
                       </button>
@@ -552,6 +587,52 @@ export default function ApplicationsPage() {
               >
                 Confirm Bulk Update
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Photo Zoom / Lightbox Modal */}
+      {previewPhoto && (
+        <div
+          onClick={() => setPreviewPhoto(null)}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200"
+          >
+            <div className="p-4 border-b flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-bold text-sm text-slate-900">{previewPhoto.name}</h3>
+                <span className="font-mono text-xs text-slate-500">{previewPhoto.code}</span>
+              </div>
+              <button
+                onClick={() => setPreviewPhoto(null)}
+                className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-6 bg-slate-950 flex items-center justify-center min-h-[300px]">
+              <img
+                src={previewPhoto.url}
+                alt={previewPhoto.name}
+                className="max-h-[500px] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-slate-800"
+              />
+            </div>
+
+            <div className="p-3 bg-slate-50 border-t flex items-center justify-between text-xs">
+              <span className="text-slate-500">Applicant Profile Photograph</span>
+              <a
+                href={previewPhoto.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold transition"
+              >
+                <Download className="w-3.5 h-3.5" /> Download Full Photo
+              </a>
             </div>
           </div>
         </div>
