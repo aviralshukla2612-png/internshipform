@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   X,
   Maximize2,
+  Trash2,
 } from "lucide-react";
 import { ApplicationStatus, Gender } from "@recruitment/shared";
 
@@ -40,6 +41,10 @@ export default function ApplicationsPage() {
 
   // Photo Zoom Lightbox Modal
   const [previewPhoto, setPreviewPhoto] = useState<{ url: string; name: string; code: string } | null>(null);
+
+  // Delete State
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["applicationsList", page, pageSize, search, selectedStatus, selectedGender, isFresherFilter],
@@ -63,6 +68,29 @@ export default function ApplicationsPage() {
         body: JSON.stringify({ status, reason }),
       }),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applicationsList"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient(`/applications/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      setDeleteTarget(null);
+      queryClient.invalidateQueries({ queryKey: ["applicationsList"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
+    },
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      apiClient("/applications/bulk-delete", {
+        method: "POST",
+        body: JSON.stringify({ ids }),
+      }),
+    onSuccess: () => {
+      setIsBulkDeleteModalOpen(false);
+      setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["applicationsList"] });
       queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
     },
@@ -164,12 +192,20 @@ export default function ApplicationsPage() {
 
         <div className="flex items-center gap-3">
           {selectedIds.length > 0 && (
-            <button
-              onClick={() => setIsBulkModalOpen(true)}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-sm"
-            >
-              Bulk Action ({selectedIds.length} selected)
-            </button>
+            <>
+              <button
+                onClick={() => setIsBulkModalOpen(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-sm"
+              >
+                Bulk Action ({selectedIds.length} selected)
+              </button>
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-rose-600 text-white text-xs font-bold hover:bg-rose-700 shadow-sm transition"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Selected ({selectedIds.length})
+              </button>
+            </>
           )}
 
           <button
@@ -396,7 +432,7 @@ export default function ApplicationsPage() {
 
                       <td className="p-3">{getStatusBadge(app.status)}</td>
 
-                      <td className="p-3 text-right space-x-1">
+                      <td className="p-3 text-right space-x-1 whitespace-nowrap">
                         <Link
                           href={`/candidates/${app.id}`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
@@ -414,7 +450,7 @@ export default function ApplicationsPage() {
                                 })
                               }
                               title="Shortlist Candidate"
-                              className="p-1 rounded text-purple-600 hover:bg-purple-50"
+                              className="p-1 rounded text-purple-600 hover:bg-purple-50 transition"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
@@ -427,12 +463,20 @@ export default function ApplicationsPage() {
                                 })
                               }
                               title="Reject Candidate"
-                              className="p-1 rounded text-rose-600 hover:bg-rose-50"
+                              className="p-1 rounded text-rose-600 hover:bg-rose-50 transition"
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
                           </>
                         ) : null}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(app)}
+                          title="Delete Application Record"
+                          className="p-1 rounded text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition"
+                        >
+                          <Trash2 className="w-4 h-4 inline-block" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -633,6 +677,117 @@ export default function ApplicationsPage() {
               >
                 <Download className="w-3.5 h-3.5" /> Download Full Photo
               </a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-rose-100 animate-in fade-in duration-150">
+            <div className="flex items-center gap-3 text-rose-600 mb-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Application</h3>
+                <p className="text-xs text-slate-500">Permanent record removal</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 my-4 space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Candidate:</span>
+                <span className="font-bold text-slate-900">{deleteTarget.candidate?.fullName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">App ID:</span>
+                <span className="font-mono font-bold text-slate-800">{deleteTarget.applicationCode}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Position:</span>
+                <span className="font-medium text-slate-800">{deleteTarget.jobPosition?.title || "N/A"}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-rose-600 font-medium">
+              Are you sure you want to delete this candidate application? This action will permanently remove all associated notes, interview rounds, and status records.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-4 border-t mt-4">
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(deleteTarget.id)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" /> Confirm Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-rose-100 animate-in fade-in duration-150">
+            <div className="flex items-center gap-3 text-rose-600 mb-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Bulk Delete Applications</h3>
+                <p className="text-xs text-slate-500">{selectedIds.length} candidate applications selected</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 my-4">
+              Are you sure you want to permanently delete <strong className="text-rose-600">{selectedIds.length}</strong> selected candidate applications? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <button
+                type="button"
+                disabled={bulkDeleteMutation.isPending}
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={bulkDeleteMutation.isPending}
+                onClick={() => bulkDeleteMutation.mutate(selectedIds)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition disabled:opacity-50"
+              >
+                {bulkDeleteMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" /> Confirm Delete All ({selectedIds.length})
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -114,5 +115,23 @@ export class ApplicationsController {
     @CurrentUser('id') authorId: string,
   ) {
     return this.applicationsService.addNote(id, authorId, note);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RbacGuard)
+  @Permissions('applications:read')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete single candidate application' })
+  async deleteApplication(@Param('id') id: string) {
+    return this.applicationsService.deleteApplication(id);
+  }
+
+  @Post('bulk-delete')
+  @UseGuards(JwtAuthGuard, RbacGuard)
+  @Permissions('applications:read')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk delete candidate applications' })
+  async bulkDelete(@Body('ids') ids: string[]) {
+    return this.applicationsService.bulkDeleteApplications(ids);
   }
 }

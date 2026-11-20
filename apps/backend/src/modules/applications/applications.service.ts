@@ -613,4 +613,60 @@ export class ApplicationsService {
       },
     });
   }
+
+  async deleteApplication(id: string) {
+    const app = await this.prisma.jobApplication.findUnique({
+      where: { id },
+      include: { candidate: true },
+    });
+
+    if (!app) {
+      throw new NotFoundException('Application record not found');
+    }
+
+    const candidateId = app.candidateId;
+
+    await this.prisma.jobApplication.delete({
+      where: { id },
+    });
+
+    const remaining = await this.prisma.jobApplication.count({
+      where: { candidateId },
+    });
+    if (remaining === 0) {
+      await this.prisma.candidate.delete({
+        where: { id: candidateId },
+      }).catch(() => null);
+    }
+
+    return { success: true, message: 'Application deleted successfully' };
+  }
+
+  async bulkDeleteApplications(ids: string[]) {
+    if (!ids || ids.length === 0) {
+      return { success: true, count: 0 };
+    }
+
+    const apps = await this.prisma.jobApplication.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, candidateId: true },
+    });
+
+    const candidateIds = [...new Set(apps.map((a) => a.candidateId))];
+
+    await this.prisma.jobApplication.deleteMany({
+      where: { id: { in: ids } },
+    });
+
+    for (const cId of candidateIds) {
+      const remaining = await this.prisma.jobApplication.count({
+        where: { candidateId: cId },
+      });
+      if (remaining === 0) {
+        await this.prisma.candidate.delete({ where: { id: cId } }).catch(() => null);
+      }
+    }
+
+    return { success: true, count: apps.length };
+  }
 }
