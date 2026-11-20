@@ -63,9 +63,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-slate-100 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
-        <div className="h-16 px-5 flex items-center border-b border-slate-800">
+      {/* Sticky Fixed Sidebar */}
+      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0 sticky top-0 h-screen z-30">
+        <div className="h-16 px-5 flex items-center border-b border-slate-800 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center p-1 mr-3 shrink-0 shadow-sm">
             <img
               src="/logo.webp"
@@ -104,7 +104,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* User Card & Logout */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60">
+        <div className="p-4 border-t border-slate-800 bg-slate-950/60 shrink-0">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-blue-700 text-white font-bold text-xs flex items-center justify-center">
               {user.fullName.charAt(0)}
