@@ -110,11 +110,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded-lg border border-slate-200">
-              <p className="font-semibold text-slate-700">Initial Super Admin Credentials:</p>
-              <p className="font-mono text-slate-600 mt-0.5">admin@enterprise.com</p>
-              <p className="font-mono text-slate-600">AdminSecurePassword123!@#</p>
-            </div>
 
             <button
               type="submit"
