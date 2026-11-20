@@ -40,10 +40,12 @@ export class ApplicationsService {
     }
 
     // 1b. Strict 10-Digit Mobile & WhatsApp Validation
-    const cleanMobile = (dto.mobileNumber || '').replace(/\D/g, '').slice(0, 10);
-    const cleanWhatsapp = (dto.whatsappNumber || '').replace(/\D/g, '').slice(0, 10);
+    const rawMobile = dto.mobileNumber || dto.whatsappNumber || '';
+    const rawWhatsapp = dto.whatsappNumber || dto.mobileNumber || '';
+    const cleanMobile = rawMobile.replace(/\D/g, '').slice(0, 10);
+    const cleanWhatsapp = rawWhatsapp.replace(/\D/g, '').slice(0, 10);
     if (cleanMobile.length !== 10) {
-      throw new BadRequestException('Mobile Number must be exactly 10 numeric digits.');
+      throw new BadRequestException('Contact / WhatsApp Number must be exactly 10 numeric digits.');
     }
     if (cleanWhatsapp.length !== 10) {
       throw new BadRequestException('WhatsApp Number must be exactly 10 numeric digits.');

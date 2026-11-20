@@ -67,7 +67,7 @@ export interface CandidateApplicationSubmissionDto {
   motherName?: string;
   dateOfBirth: string; // ISO date string
   gender: Gender; // MANDATORY
-  mobileNumber: string;
+  mobileNumber?: string;
   whatsappNumber: string;
   email: string;
   currentAddress?: Partial<AddressDto>;
