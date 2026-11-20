@@ -153,6 +153,11 @@ export default function HomePage() {
       return;
     }
 
+    if (!profilePhotoDocId) {
+      setErrorMessage("Please upload your Profile Photo (JPG, PNG, or WEBP).");
+      return;
+    }
+
     if (!accuracyConfirmed) {
       setErrorMessage("Please acknowledge the declaration to proceed.");
       return;
@@ -612,23 +617,25 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* PROFILE PHOTO UPLOAD (OPTIONAL) */}
-                  <div className="p-6 border border-slate-200 rounded-2xl bg-slate-50/70 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-xl bg-slate-200 text-slate-600 flex items-center justify-center mx-auto overflow-hidden">
+                  {/* PROFILE PHOTO UPLOAD (MANDATORY) */}
+                  <div className={`p-6 border-2 border-dashed rounded-2xl bg-slate-50/70 text-center space-y-3 transition ${
+                    profilePhotoDocId ? "border-emerald-400 bg-emerald-50/20" : "border-slate-300"
+                  }`}>
+                    <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mx-auto overflow-hidden shadow-xs">
                       {photoPreview ? (
                         <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-6 h-6" />
+                        <User className="w-6 h-6 text-blue-600" />
                       )}
                     </div>
                     <div>
-                      <span className="font-bold text-sm text-slate-900 block">
-                        Profile Photo <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                      <span className="font-extrabold text-sm text-slate-900 block">
+                        Profile Photo <span className="text-red-500">*</span>
                       </span>
-                      <p className="text-[11px] text-slate-500 mt-0.5">JPG, PNG, WEBP (max 5MB)</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5">JPG, PNG, WEBP (max 5 MB)</p>
                     </div>
 
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-300 transition">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition shadow-xs">
                       {isUploadingPhoto ? (
                         <>
                           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Uploading...
@@ -641,12 +648,18 @@ export default function HomePage() {
                       )}
                       <input
                         type="file"
-                        accept="image/*"
+                        accept="image/jpeg,image/png,image/webp"
                         disabled={isUploadingPhoto}
                         onChange={handlePhotoUpload}
                         className="sr-only"
                       />
                     </label>
+
+                    {profilePhotoDocId && (
+                      <div className="text-xs text-emerald-600 font-bold flex items-center justify-center gap-1.5 pt-1">
+                        <Check className="w-4 h-4" /> Photo Uploaded & Verified
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

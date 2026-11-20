@@ -258,6 +258,10 @@ export default function ApplyPage() {
         setErrorMessage("Valid contact numbers and email are required.");
         return false;
       }
+      if (!profilePhotoDocId) {
+        setErrorMessage("Please upload your Profile Photo.");
+        return false;
+      }
       if (!currentAddress.street || !currentAddress.city || !currentAddress.pinCode) {
         setErrorMessage("Please complete your current address.");
         return false;
@@ -610,7 +614,7 @@ export default function ApplyPage() {
               {/* Profile Photo */}
               <div className="pt-2">
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Profile Photograph (JPG, PNG, WEBP max 5MB)
+                  Profile Photograph <span className="text-red-500">*</span> (JPG, PNG, WEBP max 5MB)
                 </label>
                 <div className="flex items-center gap-4">
                   {photoPreview && (
