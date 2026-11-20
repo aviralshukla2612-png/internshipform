@@ -39,14 +39,16 @@ export class InterviewsService {
   async scheduleInterview(params: ScheduleInterviewParams) {
     const start = new Date(params.scheduledStart);
     if (isNaN(start.getTime())) {
-      throw new BadRequestException('Invalid interview start timestamp');
+      throw new BadRequestException('Invalid interview start timestamp. Please pick a valid date and time.');
     }
 
-    if (start < new Date()) {
-      throw new BadRequestException('Cannot schedule an interview in the past.');
+    // Allow scheduling today / timezone grace window (only block if > 24 hours in the past)
+    const pastLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (start < pastLimit) {
+      throw new BadRequestException('Cannot schedule an interview more than 24 hours in the past.');
     }
 
-    const duration = Math.max(15, Math.min(240, params.durationMinutes || 45));
+    const duration = Math.max(15, Math.min(240, Number(params.durationMinutes) || 45));
     const end = new Date(start.getTime() + duration * 60 * 1000);
 
     // Verify Application Exists

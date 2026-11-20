@@ -91,7 +91,7 @@ export default function CandidateDetailPage() {
     },
   });
 
-  // Schedule Interview Mutation with Conflict Engine
+  // Schedule Interview Mutation with Conflict Engine & Direct WhatsApp Web/App Trigger
   const scheduleMutation = useMutation({
     mutationFn: (data: any) =>
       apiClient("/interviews/schedule", {
@@ -103,9 +103,54 @@ export default function CandidateDetailPage() {
       setConflictError(null);
       queryClient.invalidateQueries({ queryKey: ["candidateDetail", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
+
+      // Automatically construct pre-filled WhatsApp message & open WhatsApp Web/App
+      const rawWa = candidate?.whatsappNumber || candidate?.mobileNumber || "";
+      const cleanWa = rawWa.replace(/\D/g, "");
+      const waNumberWithCode = cleanWa.length === 10 ? `91${cleanWa}` : cleanWa;
+
+      const formattedStartDate = scheduledStart
+        ? new Date(scheduledStart).toLocaleString("en-IN", {
+            dateStyle: "full",
+            timeStyle: "short",
+          })
+        : "Scheduled Date & Time";
+
+      const roundLabel = scheduleRound.replace(/_/g, " ");
+      const modeLabel =
+        scheduleMode === InterviewMode.OFFLINE
+          ? "Offline (In-Person at Office)"
+          : scheduleMode;
+
+      const messageText = `Hello ${candidate?.fullName || "Candidate"}! 👋
+
+Greetings from Emperor Smart Solutions.
+
+Your interview has been successfully scheduled:
+📅 Date & Time: ${formattedStartDate}
+🎯 Round: ${roundLabel}
+🏢 Mode: ${modeLabel}
+📍 Venue / Address: ${meetingDetails || DEFAULT_OFFICE_ADDRESS}
+📝 Instructions: ${instructions || "Please report on time with your original credentials."}
+
+Please confirm your attendance by replying to this message.
+
+Best regards,
+HR & Recruitment Team
+Emperor Smart Solutions`;
+
+      const whatsappUrl = `https://api.whatsapp.com/send?phone=${waNumberWithCode}&text=${encodeURIComponent(messageText)}`;
+
+      // Open in WhatsApp Web / App directly
+      const win = window.open(whatsappUrl, "_blank");
+      if (!win) {
+        window.location.href = whatsappUrl;
+      }
     },
     onError: (err: any) => {
-      setConflictError(err.message || "Failed to schedule interview due to scheduling conflict.");
+      setConflictError(
+        err.message || "Failed to schedule interview. Please check the start date and try again.",
+      );
     },
   });
 
@@ -158,9 +203,8 @@ export default function CandidateDetailPage() {
     e.preventDefault();
     setConflictError(null);
 
-    const interviewerId = selectedInterviewerId || interviewers?.[0]?.id;
-    if (!interviewerId) {
-      setConflictError("Please select an interviewer.");
+    if (!scheduledStart) {
+      setConflictError("Please select a date and start time for the interview.");
       return;
     }
 
@@ -169,9 +213,9 @@ export default function CandidateDetailPage() {
       roundType: scheduleRound,
       interviewMode: scheduleMode,
       scheduledStart,
-      durationMinutes: Number(durationMinutes),
-      interviewerId,
-      meetingDetails,
+      durationMinutes: Number(durationMinutes) || 45,
+      interviewerId: selectedInterviewerId || interviewers?.[0]?.id || "",
+      meetingDetails: meetingDetails || DEFAULT_OFFICE_ADDRESS,
       instructions,
     });
   };
@@ -477,19 +521,33 @@ export default function CandidateDetailPage() {
                     {intv.instructions && <p className="mt-1 text-slate-500"><strong>Instructions:</strong> {intv.instructions}</p>}
                   </div>
 
-                  {/* Interviewer assignments */}
+                  {/* Interviewer assignments & Direct WhatsApp Button */}
                   <div className="flex items-center justify-between pt-2">
-                    <div className="text-slate-600">
+                    <div className="text-slate-600 text-xs">
                       <strong>Assigned Interviewer:</strong>{" "}
-                      {intv.assignments?.[0]?.interviewer?.fullName || "Unassigned"}
+                      {intv.assignments?.[0]?.interviewer?.fullName || "Assigned by System"}
                     </div>
 
-                    <button
-                      onClick={() => sendWhatsAppMutation.mutate(intv.id)}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] shadow-xs"
-                    >
-                      <Send className="w-3.5 h-3.5" /> Trigger WhatsApp Invite
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`https://api.whatsapp.com/send?phone=91${(candidate?.whatsappNumber || candidate?.mobileNumber || "").replace(/\D/g, "")}&text=${encodeURIComponent(
+                          `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })} (${intv.roundType.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please be on time with your credentials."}`,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
+                      >
+                        <Send className="w-3.5 h-3.5" /> Send in WhatsApp
+                      </a>
+
+                      <button
+                        onClick={() => sendWhatsAppMutation.mutate(intv.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition"
+                        title="Dispatch via Meta Cloud API"
+                      >
+                        Cloud API
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))

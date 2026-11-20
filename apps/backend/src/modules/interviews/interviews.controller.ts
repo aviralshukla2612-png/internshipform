@@ -27,17 +27,7 @@ export class InterviewsController {
   @Permissions('interviews:schedule')
   @ApiOperation({ summary: 'Schedule interview with conflict prevention and interviewer assignment' })
   async schedule(
-    @Body()
-    dto: {
-      applicationId: string;
-      roundType: InterviewRoundType;
-      interviewMode: InterviewMode;
-      scheduledStart: string;
-      durationMinutes: number;
-      interviewerId: string;
-      meetingDetails: string;
-      instructions?: string;
-    },
+    @Body() dto: any,
     @CurrentUser('id') creatorId: string,
   ) {
     return this.interviewsService.scheduleInterview({
