@@ -696,22 +696,6 @@ export default function CandidateDetailPage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Assign Interviewer</label>
-                <select
-                  value={selectedInterviewerId}
-                  onChange={(e) => setSelectedInterviewerId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-white"
-                >
-                  <option value="">-- Choose Assigned Interviewer --</option>
-                  {interviewers?.map((u: any) => (
-                    <option key={u.id} value={u.id}>
-                      {u.fullName} ({u.designation || u.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block font-semibold text-slate-700">
                     Meeting Details / Office Address <span className="text-red-500">*</span>

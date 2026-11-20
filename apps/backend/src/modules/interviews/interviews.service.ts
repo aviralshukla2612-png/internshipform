@@ -58,20 +58,29 @@ export class InterviewsService {
       throw new NotFoundException('Job application not found');
     }
 
-    // Verify Interviewer Exists
-    const interviewer = await this.prisma.adminUser.findUnique({
-      where: { id: params.interviewerId },
-    });
+    // Verify Interviewer Exists (defaults to creator or first active admin)
+    let targetInterviewerId = params.interviewerId || params.creatorId;
+    let interviewer = targetInterviewerId
+      ? await this.prisma.adminUser.findUnique({ where: { id: targetInterviewerId } })
+      : null;
+
     if (!interviewer) {
-      throw new NotFoundException('Interviewer user not found');
+      interviewer = await this.prisma.adminUser.findFirst({
+        where: { status: 'ACTIVE' },
+      });
     }
+
+    if (!interviewer) {
+      throw new NotFoundException('No active administrator or interviewer found');
+    }
+    targetInterviewerId = interviewer.id;
 
     // CONFLICT ENGINE: Check Interviewer Availability
     const interviewerConflict = await this.prisma.interview.findFirst({
       where: {
         status: InterviewStatus.SCHEDULED as any,
         assignments: {
-          some: { interviewerId: params.interviewerId },
+          some: { interviewerId: targetInterviewerId },
         },
         scheduledStart: { lt: end },
         scheduledEnd: { gt: start },
@@ -120,7 +129,7 @@ export class InterviewsService {
           status: InterviewStatus.SCHEDULED as any,
           assignments: {
             create: {
-              interviewerId: params.interviewerId,
+              interviewerId: targetInterviewerId,
               isLead: true,
             },
           },
