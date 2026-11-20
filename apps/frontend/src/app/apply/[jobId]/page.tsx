@@ -561,8 +561,6 @@ export default function ApplyPage() {
                     </option>
                     <option value={Gender.MALE}>Male</option>
                     <option value={Gender.FEMALE}>Female</option>
-                    <option value={Gender.OTHER}>Other</option>
-                    <option value={Gender.PREFER_NOT_TO_DISCLOSE}>Prefer not to disclose</option>
                   </select>
                 </div>
               </div>
