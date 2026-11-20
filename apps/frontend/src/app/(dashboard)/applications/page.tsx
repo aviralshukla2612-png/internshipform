@@ -20,6 +20,7 @@ import {
   X,
   Maximize2,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import { ApplicationStatus, Gender } from "@recruitment/shared";
 
@@ -439,7 +440,65 @@ export default function ApplicationsPage() {
                         >
                           <Eye className="w-3.5 h-3.5" /> View
                         </Link>
-                        {app.status === "NEW" || app.status === "UNDER_REVIEW" ? (
+                        {app.status === ApplicationStatus.SHORTLISTED ? (
+                          <>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.NEW,
+                                  reason: "Shortlist undone from dashboard",
+                                })
+                              }
+                              title="Undo Shortlist (Reset to New)"
+                              className="p-1 rounded text-amber-600 hover:bg-amber-50 transition"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.REJECTED,
+                                  reason: "Rejected from dashboard",
+                                })
+                              }
+                              title="Reject Candidate"
+                              className="p-1 rounded text-rose-600 hover:bg-rose-50 transition"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : app.status === ApplicationStatus.REJECTED ? (
+                          <>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.NEW,
+                                  reason: "Rejection undone from dashboard",
+                                })
+                              }
+                              title="Undo Rejection (Reset to New)"
+                              className="p-1 rounded text-amber-600 hover:bg-amber-50 transition"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.SHORTLISTED,
+                                  reason: "Shortlisted from dashboard",
+                                })
+                              }
+                              title="Shortlist Candidate"
+                              className="p-1 rounded text-purple-600 hover:bg-purple-50 transition"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : app.status === ApplicationStatus.NEW || app.status === ApplicationStatus.UNDER_REVIEW ? (
                           <>
                             <button
                               onClick={() =>
@@ -468,7 +527,21 @@ export default function ApplicationsPage() {
                               <XCircle className="w-4 h-4" />
                             </button>
                           </>
-                        ) : null}
+                        ) : (
+                          <button
+                            onClick={() =>
+                              updateStatusMutation.mutate({
+                                id: app.id,
+                                status: ApplicationStatus.NEW,
+                                reason: "Status reset to New from dashboard",
+                              })
+                            }
+                            title="Reset Status to New (Undo)"
+                            className="p-1 rounded text-amber-600 hover:bg-amber-50 transition"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(app)}
@@ -600,6 +673,7 @@ export default function ApplicationsPage() {
                   className="w-full px-3 py-2 border rounded-lg text-xs"
                 >
                   <option value={ApplicationStatus.SHORTLISTED}>Shortlisted</option>
+                  <option value={ApplicationStatus.NEW}>Reset to New (Undo)</option>
                   <option value={ApplicationStatus.UNDER_REVIEW}>Under Review</option>
                   <option value={ApplicationStatus.REJECTED}>Rejected</option>
                   <option value={ApplicationStatus.ON_HOLD}>On Hold</option>

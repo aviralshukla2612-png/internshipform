@@ -29,6 +29,7 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Trash2,
+  RotateCcw,
 } from "lucide-react";
 import {
   ApplicationStatus,
@@ -293,6 +294,20 @@ Emperor Smart Solutions`;
           >
             <XCircle className="w-4 h-4" /> Reject
           </button>
+
+          {app.status === ApplicationStatus.SHORTLISTED || app.status === ApplicationStatus.REJECTED ? (
+            <button
+              onClick={() =>
+                updateStatusMutation.mutate({
+                  status: ApplicationStatus.NEW,
+                  reason: "Status undone by admin from candidate profile",
+                })
+              }
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold hover:bg-amber-100 transition"
+            >
+              <RotateCcw className="w-4 h-4" /> Undo Status (Reset to New)
+            </button>
+          ) : null}
 
           <button
             onClick={() => setIsDeleteModalOpen(true)}
