@@ -310,25 +310,25 @@ export default function ApplicationsPage() {
       {/* Applications Table */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1250px] text-left border-collapse text-xs">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-3.5 px-4 w-12 text-center">
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
+                <th className="p-3 w-8">
                   <input
                     type="checkbox"
                     onChange={handleSelectAll}
                     checked={data?.data && data.data.length > 0 && selectedIds.length === data.data.length}
-                    className="w-4 h-4 rounded text-blue-600 cursor-pointer"
+                    className="w-3.5 h-3.5 rounded text-blue-600"
                   />
                 </th>
-                <th className="py-3.5 px-4 whitespace-nowrap">Application ID</th>
-                <th className="py-3.5 px-4 min-w-[240px]">Candidate</th>
-                <th className="py-3.5 px-4 min-w-[220px]">Position</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">Gender</th>
-                <th className="py-3.5 px-4 min-w-[200px]">Profile Snapshot</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">Applied Date</th>
-                <th className="py-3.5 px-4 whitespace-nowrap">Status</th>
-                <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
+                <th className="p-3 whitespace-nowrap">Application ID</th>
+                <th className="p-3">Candidate</th>
+                <th className="p-3">Position</th>
+                <th className="p-3 whitespace-nowrap">Gender</th>
+                <th className="p-3">Profile Snapshot</th>
+                <th className="p-3 whitespace-nowrap">Applied Date</th>
+                <th className="p-3 whitespace-nowrap">Status</th>
+                <th className="p-3 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -353,23 +353,21 @@ export default function ApplicationsPage() {
 
                   return (
                     <tr key={app.id} className={`hover:bg-slate-50/80 transition ${isChecked ? "bg-blue-50/40" : ""}`}>
-                      <td className="py-3.5 px-4 w-12 text-center">
+                      <td className="p-3">
                         <input
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleSelectOne(app.id)}
-                          className="w-4 h-4 rounded text-blue-600 cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-blue-600"
                         />
                       </td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md text-[11px] border border-slate-200/80 inline-block">
-                          {app.applicationCode}
-                        </span>
+                      <td className="p-3 font-mono font-bold text-slate-900 whitespace-nowrap">
+                        {app.applicationCode}
                       </td>
 
-                      <td className="py-3.5 px-4 min-w-[240px]">
-                        <div className="flex items-center gap-3">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2.5">
                           {app.candidate.profilePhotoDocId ? (
                             <button
                               type="button"
@@ -386,14 +384,14 @@ export default function ApplicationsPage() {
                               <img
                                 src={`/api/v1/documents/view/${app.candidate.profilePhotoDocId}`}
                                 alt={app.candidate.fullName}
-                                className="w-10 h-10 rounded-full object-cover border-2 border-slate-200 group-hover:border-blue-500 shadow-xs transition transform group-hover:scale-105"
+                                className="w-9 h-9 rounded-full object-cover border-2 border-slate-200 group-hover:border-blue-500 shadow-xs transition transform group-hover:scale-105"
                               />
                               <div className="absolute inset-0 bg-black/25 rounded-full opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
-                                <Maximize2 className="w-3.5 h-3.5 text-white drop-shadow" />
+                                <Maximize2 className="w-3 h-3 text-white drop-shadow" />
                               </div>
                             </button>
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
+                            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center shrink-0 border border-blue-200">
                               {app.candidate.fullName ? app.candidate.fullName.charAt(0).toUpperCase() : "U"}
                             </div>
                           )}
@@ -408,58 +406,36 @@ export default function ApplicationsPage() {
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-4 min-w-[220px]">
-                        <div className="font-semibold text-slate-900 leading-snug">{app.jobPosition?.title || "N/A"}</div>
-                        <div className="text-[10px] text-slate-500 mt-0.5">{app.jobPosition?.department || "Engineering & Innovation"}</div>
+                      <td className="p-3">
+                        <div className="font-medium text-slate-800 leading-snug">{app.jobPosition?.title || "N/A"}</div>
+                        <div className="text-[10px] text-slate-500">{app.jobPosition?.department}</div>
                       </td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {app.candidate.gender === "MALE" ? (
-                          <span className="font-semibold text-slate-700">Male</span>
-                        ) : (
-                          <span className="font-semibold text-slate-700">Female</span>
-                        )}
+                      <td className="p-3 text-slate-600 font-medium whitespace-nowrap">
+                        {app.candidate.gender.replace(/_/g, " ")}
                       </td>
 
-                      <td className="py-3.5 px-4 min-w-[200px]">
+                      <td className="p-3">
                         {app.isFresher ? (
-                          <div className="space-y-1">
-                            <span className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Fresher
-                            </span>
-                            <div className="text-[11px] text-slate-700 font-medium truncate max-w-[220px]" title={latestEdu?.degreeName || "Graduate"}>
-                              {latestEdu?.degreeName || "Graduate"}
-                            </div>
-                          </div>
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200 inline-block leading-normal">
+                            Fresher ({latestEdu?.degreeName || "Graduate"})
+                          </span>
                         ) : (
-                          <div className="space-y-0.5">
-                            <span className="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              Experienced
-                            </span>
-                            <div className="text-[11px] font-semibold text-slate-800 truncate max-w-[220px]" title={latestExp?.designation}>
-                              {latestExp?.designation || "Professional"}
-                            </div>
-                            {latestExp?.companyName && (
-                              <div className="text-[10px] text-slate-500 truncate max-w-[220px]">
-                                {latestExp.companyName}
-                              </div>
-                            )}
+                          <div className="text-[11px]">
+                            <span className="font-semibold text-slate-800">{latestExp?.designation || "Experienced"}</span>
+                            <div className="text-[10px] text-slate-500">{latestExp?.companyName || "Previous Org"}</div>
                           </div>
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
-                        {formatDate(app.createdAt)}
-                      </td>
+                      <td className="p-3 text-slate-500 whitespace-nowrap">{formatDate(app.createdAt)}</td>
 
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {getStatusBadge(app.status)}
-                      </td>
+                      <td className="p-3 whitespace-nowrap">{getStatusBadge(app.status)}</td>
 
-                      <td className="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
+                      <td className="p-3 text-right space-x-1 whitespace-nowrap">
                         <Link
                           href={`/candidates/${app.id}`}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
                         >
                           <Eye className="w-3.5 h-3.5" /> View
                         </Link>
@@ -474,7 +450,7 @@ export default function ApplicationsPage() {
                                 })
                               }
                               title="Shortlist Candidate"
-                              className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition border border-transparent hover:border-purple-200"
+                              className="p-1 rounded text-purple-600 hover:bg-purple-50 transition"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
@@ -487,7 +463,7 @@ export default function ApplicationsPage() {
                                 })
                               }
                               title="Reject Candidate"
-                              className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 transition border border-transparent hover:border-rose-200"
+                              className="p-1 rounded text-rose-600 hover:bg-rose-50 transition"
                             >
                               <XCircle className="w-4 h-4" />
                             </button>
@@ -496,8 +472,8 @@ export default function ApplicationsPage() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(app)}
-                          title="Delete Application Record"
-                          className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition border border-transparent hover:border-rose-200"
+                          title="Delete Candidate Record"
+                          className="p-1 rounded text-rose-500 hover:text-rose-700 hover:bg-rose-50 transition"
                         >
                           <Trash2 className="w-4 h-4 inline-block" />
                         </button>
