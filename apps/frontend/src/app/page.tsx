@@ -225,26 +225,26 @@ export default function HomePage() {
       {/* 1. BLACK BACKGROUND NAVBAR */}
       <header className="border-b border-slate-800 bg-slate-950 sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <img
               src="/logo.webp"
               alt="Emperor Smart Solutions"
-              className="w-10 h-10 object-contain filter drop-shadow"
+              className="w-8 h-8 sm:w-10 sm:h-10 object-contain filter drop-shadow shrink-0"
             />
-            <div>
-              <span className="font-extrabold text-lg text-white tracking-tight">
+            <div className="min-w-0 truncate">
+              <span className="font-extrabold text-sm sm:text-lg text-white tracking-tight truncate block">
                 Emperor <span className="text-blue-500">Smart Solutions</span>
               </span>
-              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-950/80 text-blue-400 rounded-md border border-blue-800/80">
+              <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] uppercase font-semibold bg-blue-950/80 text-blue-400 rounded-md border border-blue-800/80">
                 Internship Portal
               </span>
             </div>
           </div>
 
-          <nav className="flex items-center space-x-4 sm:space-x-6">
+          <nav className="flex items-center space-x-2 sm:space-x-6 shrink-0">
             <a
               href="#curriculum"
-              className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
+              className="hidden md:inline-block text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
             >
               Curriculum & Benefits
             </a>
@@ -252,7 +252,7 @@ export default function HomePage() {
               href="#apply-form"
               className="text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition"
             >
-              Application Form
+              Apply Online
             </a>
             <Link
               href="/track"

@@ -91,16 +91,16 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
-              <div className={`p-2 rounded-lg ${kpi.color}`}>
-                <kpi.icon className="w-4 h-4" />
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
+              <div className={`p-1.5 sm:p-2 rounded-lg ${kpi.color}`}>
+                <kpi.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
-            <p className="text-2xl font-extrabold text-slate-900 mt-2">{kpi.value}</p>
+            <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-2">{kpi.value}</p>
           </div>
         ))}
       </div>

@@ -21,8 +21,8 @@ export default function EmailLogsPage() {
         </p>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-        <table className="w-full text-left text-xs">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+        <table className="w-full min-w-[700px] text-left text-xs">
           <thead className="bg-slate-50 border-b text-slate-500 font-bold uppercase tracking-wider">
             <tr>
               <th className="p-3">Recipient</th>

@@ -231,7 +231,7 @@ Emperor Smart Solutions`;
   return (
     <div className="space-y-6">
       {/* Top Banner with Profile Photo & Actions */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row justify-between md:items-center gap-6">
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs flex flex-col md:flex-row justify-between md:items-center gap-4 sm:gap-6">
         <div className="flex items-center gap-4">
           {candidate.profilePhotoDocId ? (
             <img
@@ -570,7 +570,7 @@ Emperor Smart Solutions`;
                 <iframe
                   src={`/api/v1/documents/view/${app.resumeDocId}#toolbar=0`}
                   title="Candidate Resume Preview"
-                  className="w-full h-[700px] rounded-xl border border-slate-200 shadow-inner bg-slate-50"
+                  className="w-full h-[420px] sm:h-[600px] lg:h-[700px] rounded-xl border border-slate-200 shadow-inner bg-slate-50"
                 />
                 <p className="text-[11px] text-slate-400 text-center">
                   Live Resume Preview • If the PDF preview doesn't render in your browser, click "Open in New Tab" or "Download PDF" above.
@@ -588,7 +588,7 @@ Emperor Smart Solutions`;
       {/* SCHEDULE INTERVIEW MODAL WITH CONFLICT ENGINE */}
       {isScheduleModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl border">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-xl border mx-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Calendar className="w-5 h-5 text-blue-600" />
               Schedule Interview for {candidate.fullName}
@@ -728,7 +728,7 @@ Emperor Smart Solutions`;
       {/* Delete Candidate Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-rose-100 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-xl border border-rose-100 animate-in fade-in duration-150 mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3 text-rose-600 mb-3">
               <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5 text-rose-600" />

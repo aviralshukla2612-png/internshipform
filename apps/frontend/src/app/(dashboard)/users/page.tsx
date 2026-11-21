@@ -69,8 +69,8 @@ export default function UsersPage() {
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-        <table className="w-full text-left text-xs">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+        <table className="w-full min-w-[700px] text-left text-xs">
           <thead className="bg-slate-50 border-b text-slate-500 font-bold uppercase tracking-wider">
             <tr>
               <th className="p-3">User</th>
@@ -135,7 +135,7 @@ export default function UsersPage() {
       {/* Provision Account Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border max-h-[90vh] overflow-y-auto">
             <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <UserPlus className="w-5 h-5 text-blue-600" /> Provision Internal Account
             </h3>
