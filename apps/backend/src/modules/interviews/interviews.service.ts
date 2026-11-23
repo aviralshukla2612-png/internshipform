@@ -25,6 +25,7 @@ export interface ScheduleInterviewParams {
   meetingDetails: string;
   instructions?: string;
   remarks?: string;
+  openWhatsApp?: boolean;
   creatorId: string;
 }
 

@@ -30,6 +30,8 @@ import {
   Image as ImageIcon,
   Trash2,
   RotateCcw,
+  Save,
+  MessageCircle,
 } from "lucide-react";
 import {
   ApplicationStatus,
@@ -65,6 +67,7 @@ export default function CandidateDetailPage() {
   );
   const [remarks, setRemarks] = useState("");
   const [conflictError, setConflictError] = useState<string | null>(null);
+  const [pendingOpenWhatsApp, setPendingOpenWhatsApp] = useState(false);
 
   const { data: app, isLoading } = useQuery({
     queryKey: ["candidateDetail", id],
@@ -97,34 +100,35 @@ export default function CandidateDetailPage() {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    onSuccess: () => {
+    onSuccess: (_res: any, variables: any) => {
       setIsScheduleModalOpen(false);
       setConflictError(null);
       setRemarks("");
       queryClient.invalidateQueries({ queryKey: ["candidateDetail", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
 
-      // Automatically construct pre-filled WhatsApp message & open WhatsApp Web/App
-      const rawWa = candidate?.whatsappNumber || candidate?.mobileNumber || "";
-      const cleanWa = rawWa.replace(/\D/g, "");
-      const waNumberWithCode = cleanWa.length === 10 ? `91${cleanWa}` : cleanWa;
+      // Only open WhatsApp Web / App if user chose "Schedule & Open WhatsApp"
+      if (variables?.openWhatsApp) {
+        const rawWa = candidate?.whatsappNumber || candidate?.mobileNumber || "";
+        const cleanWa = rawWa.replace(/\D/g, "");
+        const waNumberWithCode = cleanWa.length === 10 ? `91${cleanWa}` : cleanWa;
 
-      const formattedStartDate = scheduledStart
-        ? new Date(scheduledStart).toLocaleString("en-IN", {
-            dateStyle: "full",
-            timeStyle: "short",
-          })
-        : "Scheduled Date & Time";
+        const formattedStartDate = scheduledStart
+          ? new Date(scheduledStart).toLocaleString("en-IN", {
+              dateStyle: "full",
+              timeStyle: "short",
+            })
+          : "Scheduled Date & Time";
 
-      const roundLabel = scheduleRound.replace(/_/g, " ");
-      const modeLabel =
-        scheduleMode === InterviewMode.OFFLINE
-          ? "Offline (In-Person at Office)"
-          : scheduleMode;
+        const roundLabel = scheduleRound.replace(/_/g, " ");
+        const modeLabel =
+          scheduleMode === InterviewMode.OFFLINE
+            ? "Offline (In-Person at Office)"
+            : scheduleMode;
 
-      const remarksSection = remarks.trim() ? `\n📌 Remarks: ${remarks.trim()}` : "";
+        const remarksSection = remarks.trim() ? `\n📌 Remarks: ${remarks.trim()}` : "";
 
-      const messageText = `Hello ${candidate?.fullName || "Candidate"}! 👋
+        const messageText = `Hello ${candidate?.fullName || "Candidate"}! 👋
 
 Greetings from Emperor Smart Solutions.
 
@@ -141,12 +145,13 @@ Best regards,
 HR & Recruitment Team
 Emperor Smart Solutions`;
 
-      const whatsappUrl = `https://api.whatsapp.com/send?phone=${waNumberWithCode}&text=${encodeURIComponent(messageText)}`;
+        const whatsappUrl = `https://api.whatsapp.com/send?phone=${waNumberWithCode}&text=${encodeURIComponent(messageText)}`;
 
-      // Open in WhatsApp Web / App directly
-      const win = window.open(whatsappUrl, "_blank");
-      if (!win) {
-        window.location.href = whatsappUrl;
+        // Open in WhatsApp Web / App directly
+        const win = window.open(whatsappUrl, "_blank");
+        if (!win) {
+          window.location.href = whatsappUrl;
+        }
       }
     },
     onError: (err: any) => {
@@ -211,14 +216,16 @@ Emperor Smart Solutions`;
 
   const candidate = app.candidate;
 
-  const handleScheduleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleScheduleSubmit = (e?: React.FormEvent, openWhatsApp: boolean = false) => {
+    if (e) e.preventDefault();
     setConflictError(null);
 
     if (!scheduledStart) {
       setConflictError("Please select a date and start time for the interview.");
       return;
     }
+
+    setPendingOpenWhatsApp(openWhatsApp);
 
     scheduleMutation.mutate({
       applicationId: app.id,
@@ -230,6 +237,7 @@ Emperor Smart Solutions`;
       meetingDetails: meetingDetails || DEFAULT_OFFICE_ADDRESS,
       instructions,
       remarks,
+      openWhatsApp,
     });
   };
 
@@ -611,7 +619,7 @@ Emperor Smart Solutions`;
               </div>
             )}
 
-            <form onSubmit={handleScheduleSubmit} className="space-y-4 mt-4 text-xs">
+            <form onSubmit={(e) => handleScheduleSubmit(e, false)} className="space-y-4 mt-4 text-xs">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">Interview Round</label>
@@ -729,20 +737,37 @@ Emperor Smart Solutions`;
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-end items-stretch sm:items-center gap-2 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => setIsScheduleModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold"
+                  className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
                 >
                   Cancel
                 </button>
+
+                {/* Button 1: Save in admin system only - Does NOT open WhatsApp */}
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={(e) => handleScheduleSubmit(e, false)}
                   disabled={scheduleMutation.isPending}
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition"
+                  title="Save interview details in admin portal without launching WhatsApp"
                 >
-                  {scheduleMutation.isPending ? "Validating Conflicts..." : "Confirm Schedule"}
+                  <Save className="w-3.5 h-3.5" />
+                  {scheduleMutation.isPending && !pendingOpenWhatsApp ? "Saving..." : "Save (Admin Only)"}
+                </button>
+
+                {/* Button 2: Save and automatically open WhatsApp with invite */}
+                <button
+                  type="button"
+                  onClick={(e) => handleScheduleSubmit(e, true)}
+                  disabled={scheduleMutation.isPending}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
+                  title="Save interview details and launch WhatsApp with candidate invitation"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  {scheduleMutation.isPending && pendingOpenWhatsApp ? "Scheduling..." : "Schedule & Open WhatsApp"}
                 </button>
               </div>
             </form>
