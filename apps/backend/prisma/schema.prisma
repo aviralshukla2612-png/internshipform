@@ -496,6 +496,7 @@ model Interview {
   durationMinutes   Int                     @default(45)
   meetingDetails    String                  @db.Text // e.g. Google Meet link or office address
   instructions      String?                 @db.Text
+  remarks           String?                 @db.Text
   status            InterviewStatus         @default(SCHEDULED)
   cancellationReason String?
   createdAt         DateTime                @default(now())

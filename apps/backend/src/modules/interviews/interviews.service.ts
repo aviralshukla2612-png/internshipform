@@ -24,6 +24,7 @@ export interface ScheduleInterviewParams {
   interviewerId: string;
   meetingDetails: string;
   instructions?: string;
+  remarks?: string;
   creatorId: string;
 }
 
@@ -128,6 +129,7 @@ export class InterviewsService {
           durationMinutes: duration,
           meetingDetails: params.meetingDetails,
           instructions: params.instructions,
+          remarks: params.remarks,
           status: InterviewStatus.SCHEDULED as any,
           assignments: {
             create: {
@@ -162,6 +164,16 @@ export class InterviewsService {
         },
       });
 
+      if (params.remarks && params.remarks.trim()) {
+        await tx.candidateNote.create({
+          data: {
+            applicationId: params.applicationId,
+            authorId: params.creatorId,
+            note: `[Interview Scheduled - ${String(params.roundType).replace(/_/g, " ")}]: ${params.remarks.trim()}`,
+          },
+        });
+      }
+
       return newInterview;
     });
 
@@ -175,6 +187,7 @@ export class InterviewsService {
         candidateName: app.candidate.fullName,
         interviewerName: interviewer.fullName,
         scheduledStart: start.toISOString(),
+        remarks: params.remarks,
       },
     });
 

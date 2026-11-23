@@ -114,6 +114,12 @@ export default function InterviewsPage() {
                     <span>{intv.meetingDetails}</span>
                   </div>
                 )}
+
+                {intv.remarks && (
+                  <div className="mt-1.5 text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1 rounded text-[11px]">
+                    <span className="font-semibold text-slate-900">Remark:</span> {intv.remarks}
+                  </div>
+                )}
               </div>
 
               {intv.status === "SCHEDULED" && (

@@ -151,6 +151,7 @@ export interface ScheduleInterviewDto {
   interviewerId: string;
   meetingDetails: string;
   instructions?: string;
+  remarks?: string;
   sendCandidateWhatsApp: boolean;
   sendCandidateEmail: boolean;
 }

@@ -63,6 +63,7 @@ export default function CandidateDetailPage() {
   const [instructions, setInstructions] = useState(
     "Please report to the office 10 minutes before the scheduled time with your original credentials.",
   );
+  const [remarks, setRemarks] = useState("");
   const [conflictError, setConflictError] = useState<string | null>(null);
 
   const { data: app, isLoading } = useQuery({
@@ -99,6 +100,7 @@ export default function CandidateDetailPage() {
     onSuccess: () => {
       setIsScheduleModalOpen(false);
       setConflictError(null);
+      setRemarks("");
       queryClient.invalidateQueries({ queryKey: ["candidateDetail", id] });
       queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
 
@@ -120,6 +122,8 @@ export default function CandidateDetailPage() {
           ? "Offline (In-Person at Office)"
           : scheduleMode;
 
+      const remarksSection = remarks.trim() ? `\n📌 Remarks: ${remarks.trim()}` : "";
+
       const messageText = `Hello ${candidate?.fullName || "Candidate"}! 👋
 
 Greetings from Emperor Smart Solutions.
@@ -129,7 +133,7 @@ Your interview has been successfully scheduled:
 🎯 Round: ${roundLabel}
 🏢 Mode: ${modeLabel}
 📍 Venue / Address: ${meetingDetails || DEFAULT_OFFICE_ADDRESS}
-📝 Instructions: ${instructions || "Please report on time with your original credentials."}
+📝 Instructions: ${instructions || "Please report on time with your original credentials."}${remarksSection}
 
 Please confirm your attendance by replying to this message.
 
@@ -225,6 +229,7 @@ Emperor Smart Solutions`;
       interviewerId: selectedInterviewerId || interviewers?.[0]?.id || "",
       meetingDetails: meetingDetails || DEFAULT_OFFICE_ADDRESS,
       instructions,
+      remarks,
     });
   };
 
@@ -428,15 +433,20 @@ Emperor Smart Solutions`;
                     <strong>Date & Time:</strong> {new Date(intv.scheduledStart).toLocaleString()} ({intv.durationMinutes} mins)
                   </p>
 
-                  <div className="bg-white p-2.5 rounded border text-slate-700 text-[11px]">
+                  <div className="bg-white p-2.5 rounded border text-slate-700 text-[11px] space-y-1">
                     <p><strong>Venue / Address:</strong> {intv.meetingDetails}</p>
-                    {intv.instructions && <p className="mt-1 text-slate-500"><strong>Instructions:</strong> {intv.instructions}</p>}
+                    {intv.instructions && <p className="text-slate-500"><strong>Instructions:</strong> {intv.instructions}</p>}
+                    {intv.remarks && (
+                      <p className="text-blue-700 bg-blue-50/70 p-1.5 rounded border border-blue-100">
+                        <strong>Remarks:</strong> {intv.remarks}
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-1">
                     <a
                       href={`https://api.whatsapp.com/send?phone=91${(candidate?.whatsappNumber || candidate?.mobileNumber || "").replace(/\D/g, "")}&text=${encodeURIComponent(
-                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}`,
+                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}${intv.remarks ? ` Remarks: ${intv.remarks}` : ""}`,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -701,7 +711,21 @@ Emperor Smart Solutions`;
                   type="text"
                   value={instructions}
                   onChange={(e) => setInstructions(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="e.g. Please report to the office 10 minutes before the scheduled time with original documents."
+                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  Remark / Internal Notes <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Add any specific remarks, candidate discussion points, or agenda for this interview..."
+                  className="w-full px-3 py-2 border rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
               </div>
 
