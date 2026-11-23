@@ -482,6 +482,7 @@ export class ApplicationsService {
             include: {
               educations: { take: 1, orderBy: { passingYear: 'desc' } },
               experiences: { take: 1, orderBy: { joiningDate: 'desc' } },
+              addresses: { take: 1 },
             },
           },
           jobPosition: {

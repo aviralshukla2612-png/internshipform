@@ -21,6 +21,10 @@ import {
   Maximize2,
   Trash2,
   RotateCcw,
+  Phone,
+  Mail,
+  MessageCircle,
+  MapPin,
 } from "lucide-react";
 import { ApplicationStatus, Gender } from "@recruitment/shared";
 
@@ -132,6 +136,7 @@ export default function ApplicationsPage() {
       "Candidate Name",
       "Email",
       "Mobile",
+      "WhatsApp",
       "Gender",
       "Position",
       "Fresher",
@@ -144,6 +149,7 @@ export default function ApplicationsPage() {
       `"${app.candidate.fullName}"`,
       app.candidate.email,
       app.candidate.mobileNumber,
+      app.candidate.whatsappNumber || app.candidate.mobileNumber,
       app.candidate.gender,
       `"${app.jobPosition?.title || "N/A"}"`,
       app.isFresher ? "Yes" : "No",
@@ -313,7 +319,7 @@ export default function ApplicationsPage() {
       {/* Applications Table */}
       <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto touch-pan-x">
-          <table className="w-full min-w-[780px] lg:min-w-full text-left border-collapse text-xs">
+          <table className="w-full min-w-[980px] lg:min-w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider">
                 <th className="p-3 w-8">
@@ -326,6 +332,7 @@ export default function ApplicationsPage() {
                 </th>
                 <th className="p-3 whitespace-nowrap">Application ID</th>
                 <th className="p-3">Candidate</th>
+                <th className="p-3 whitespace-nowrap">Mobile / Contact</th>
                 <th className="p-3">Position</th>
                 <th className="p-3 whitespace-nowrap">Gender</th>
                 <th className="p-3">Profile Snapshot</th>
@@ -337,14 +344,14 @@ export default function ApplicationsPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-400">
+                  <td colSpan={10} className="p-8 text-center text-slate-400">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-600" />
                     Loading application records...
                   </td>
                 </tr>
               ) : !data?.data || data.data.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-slate-500">
+                  <td colSpan={10} className="p-8 text-center text-slate-500">
                     No applications match the search or filter criteria.
                   </td>
                 </tr>
@@ -353,6 +360,7 @@ export default function ApplicationsPage() {
                   const isChecked = selectedIds.includes(app.id);
                   const latestEdu = app.candidate.educations?.[0];
                   const latestExp = app.candidate.experiences?.[0];
+                  const address = app.candidate.addresses?.[0];
 
                   return (
                     <tr key={app.id} className={`hover:bg-slate-50/80 transition ${isChecked ? "bg-blue-50/40" : ""}`}>
@@ -401,11 +409,70 @@ export default function ApplicationsPage() {
 
                           <div className="min-w-0">
                             <div className="font-bold text-slate-900 truncate">{app.candidate.fullName}</div>
-                            <div className="text-[11px] text-slate-500 truncate">{app.candidate.email}</div>
-                            <div className="text-[10px] text-slate-400 font-mono truncate">
-                              {app.candidate.whatsappNumber || app.candidate.mobileNumber}
-                            </div>
+                            {app.candidate.fatherName && (
+                              <div className="text-[10px] text-slate-400 truncate">S/D/O {app.candidate.fatherName}</div>
+                            )}
                           </div>
+                        </div>
+                      </td>
+
+                      {/* Mobile / Contact Details Column */}
+                      <td className="p-3 whitespace-nowrap">
+                        <div className="space-y-1 text-xs">
+                          {/* Primary Mobile Number + Click to Call + WhatsApp Badge */}
+                          <div className="flex items-center gap-1.5 font-bold text-slate-900 font-mono">
+                            <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <a
+                              href={`tel:${app.candidate.mobileNumber}`}
+                              className="hover:text-blue-600 hover:underline"
+                              title="Click to call candidate"
+                            >
+                              {app.candidate.mobileNumber}
+                            </a>
+                            {app.candidate.whatsappNumber && (
+                              <a
+                                href={`https://api.whatsapp.com/send?phone=91${app.candidate.whatsappNumber.replace(/\D/g, "").slice(-10)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ml-1 inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition"
+                                title="Chat on WhatsApp"
+                              >
+                                <MessageCircle className="w-3 h-3 text-emerald-600" />
+                                <span>WA</span>
+                              </a>
+                            )}
+                          </div>
+
+                          {/* WhatsApp number if different from Mobile */}
+                          {app.candidate.whatsappNumber && app.candidate.whatsappNumber !== app.candidate.mobileNumber && (
+                            <div className="flex items-center gap-1.5 text-slate-500 font-mono text-[11px]">
+                              <MessageCircle className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>WA: {app.candidate.whatsappNumber}</span>
+                            </div>
+                          )}
+
+                          {/* Email Address */}
+                          <div className="flex items-center gap-1.5 text-slate-600 text-[11px]">
+                            <Mail className="w-3 h-3 text-slate-400 shrink-0" />
+                            <a
+                              href={`mailto:${app.candidate.email}`}
+                              className="hover:text-blue-600 hover:underline truncate max-w-[200px]"
+                              title={app.candidate.email}
+                            >
+                              {app.candidate.email}
+                            </a>
+                          </div>
+
+                          {/* Address / City if available */}
+                          {address?.city && (
+                            <div className="flex items-center gap-1.5 text-slate-400 text-[10px]">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>
+                                {address.city}
+                                {address.state ? `, ${address.state}` : ""}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </td>
 
