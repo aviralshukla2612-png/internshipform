@@ -236,18 +236,13 @@ Emperor Smart Solutions`;
     if (e) e.preventDefault();
     setConflictError(null);
 
-    if (!scheduledStart) {
-      setConflictError("Please select a date and start time for the interview.");
-      return;
-    }
-
     setPendingOpenWhatsApp(openWhatsApp);
 
     scheduleMutation.mutate({
       applicationId: app.id,
       roundType: scheduleRound,
       interviewMode: scheduleMode,
-      scheduledStart,
+      scheduledStart: scheduledStart ? scheduledStart : undefined,
       durationMinutes: Number(durationMinutes) || 45,
       interviewerId: selectedInterviewerId || interviewers?.[0]?.id || "",
       meetingDetails: meetingDetails || DEFAULT_OFFICE_ADDRESS,
@@ -458,7 +453,16 @@ Emperor Smart Solutions`;
                   </div>
 
                   <p className="text-slate-600">
-                    <strong>Date & Time:</strong> {new Date(intv.scheduledStart).toLocaleString()} ({intv.durationMinutes} mins)
+                    <strong>Date & Time:</strong>{" "}
+                    {intv.scheduledStart ? (
+                      <>
+                        {new Date(intv.scheduledStart).toLocaleString()} ({intv.durationMinutes} mins)
+                      </>
+                    ) : (
+                      <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-200">
+                        Date & Time: To be decided (TBD)
+                      </span>
+                    )}
                   </p>
 
                   <div className="bg-white p-2.5 rounded border text-slate-700 text-[11px] space-y-1">
@@ -474,7 +478,7 @@ Emperor Smart Solutions`;
                   <div className="pt-1">
                     <a
                       href={`https://api.whatsapp.com/send?phone=91${(candidate?.whatsappNumber || candidate?.mobileNumber || "").replace(/\D/g, "")}&text=${encodeURIComponent(
-                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" })} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}${intv.remarks ? ` Remarks: ${intv.remarks}` : ""}`,
+                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${intv.scheduledStart ? new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" }) : "Date to be confirmed"} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}${intv.remarks ? ` Remarks: ${intv.remarks}` : ""}`,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -688,13 +692,12 @@ Emperor Smart Solutions`;
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-slate-700 mb-1">
-                    Date & Start Time <span className="text-red-500">*</span>
+                    Date & Start Time <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
                   </label>
                   <PremiumDateTimePicker
                     value={scheduledStart}
                     onChange={setScheduledStart}
-                    placeholder="Select Date & Start Time"
-                    required
+                    placeholder="Select Date & Start Time (Optional)"
                   />
                 </div>
                 <div>

@@ -19,8 +19,8 @@ export interface ScheduleInterviewParams {
   applicationId: string;
   roundType: InterviewRoundType;
   interviewMode: InterviewMode;
-  scheduledStart: string; // ISO String
-  durationMinutes: number;
+  scheduledStart?: string; // ISO String - now optional
+  durationMinutes?: number;
   interviewerId: string;
   meetingDetails: string;
   instructions?: string;
@@ -39,19 +39,24 @@ export class InterviewsService {
   ) {}
 
   async scheduleInterview(params: ScheduleInterviewParams) {
-    const start = new Date(params.scheduledStart);
-    if (isNaN(start.getTime())) {
-      throw new BadRequestException('Invalid interview start timestamp. Please pick a valid date and time.');
-    }
-
-    // Allow scheduling today / timezone grace window (only block if > 24 hours in the past)
-    const pastLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    if (start < pastLimit) {
-      throw new BadRequestException('Cannot schedule an interview more than 24 hours in the past.');
-    }
-
+    let start: Date | null = null;
+    let end: Date | null = null;
     const duration = Math.max(15, Math.min(240, Number(params.durationMinutes) || 45));
-    const end = new Date(start.getTime() + duration * 60 * 1000);
+
+    if (params.scheduledStart && params.scheduledStart.trim()) {
+      start = new Date(params.scheduledStart);
+      if (isNaN(start.getTime())) {
+        throw new BadRequestException('Invalid interview start timestamp. Please pick a valid date and time.');
+      }
+
+      // Allow scheduling today / timezone grace window (only block if > 24 hours in the past)
+      const pastLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      if (start < pastLimit) {
+        throw new BadRequestException('Cannot schedule an interview more than 24 hours in the past.');
+      }
+
+      end = new Date(start.getTime() + duration * 60 * 1000);
+    }
 
     // Verify Application Exists
     const app = await this.prisma.jobApplication.findUnique({
@@ -79,43 +84,45 @@ export class InterviewsService {
     }
     targetInterviewerId = interviewer.id;
 
-    // CONFLICT ENGINE: Check Interviewer Availability
-    const interviewerConflict = await this.prisma.interview.findFirst({
-      where: {
-        status: InterviewStatus.SCHEDULED as any,
-        assignments: {
-          some: { interviewerId: targetInterviewerId },
+    // CONFLICT ENGINE: Check Interviewer Availability (only if date/time specified)
+    if (start && end) {
+      const interviewerConflict = await this.prisma.interview.findFirst({
+        where: {
+          status: InterviewStatus.SCHEDULED as any,
+          assignments: {
+            some: { interviewerId: targetInterviewerId },
+          },
+          scheduledStart: { not: null, lt: end },
+          scheduledEnd: { not: null, gt: start },
         },
-        scheduledStart: { lt: end },
-        scheduledEnd: { gt: start },
-      },
-      include: {
-        application: {
-          include: { candidate: { select: { fullName: true } } },
+        include: {
+          application: {
+            include: { candidate: { select: { fullName: true } } },
+          },
         },
-      },
-    });
+      });
 
-    if (interviewerConflict) {
-      throw new ConflictException(
-        `Scheduling Conflict: Interviewer ${interviewer.fullName} is already booked for another interview with candidate "${interviewerConflict.application.candidate.fullName}" from ${interviewerConflict.scheduledStart.toLocaleTimeString()} to ${interviewerConflict.scheduledEnd.toLocaleTimeString()}.`,
-      );
-    }
+      if (interviewerConflict && interviewerConflict.scheduledStart && interviewerConflict.scheduledEnd) {
+        throw new ConflictException(
+          `Scheduling Conflict: Interviewer ${interviewer.fullName} is already booked for another interview with candidate "${interviewerConflict.application.candidate.fullName}" from ${interviewerConflict.scheduledStart.toLocaleTimeString()} to ${interviewerConflict.scheduledEnd.toLocaleTimeString()}.`,
+        );
+      }
 
-    // CONFLICT ENGINE: Check Candidate Availability
-    const candidateConflict = await this.prisma.interview.findFirst({
-      where: {
-        applicationId: params.applicationId,
-        status: InterviewStatus.SCHEDULED as any,
-        scheduledStart: { lt: end },
-        scheduledEnd: { gt: start },
-      },
-    });
+      // CONFLICT ENGINE: Check Candidate Availability
+      const candidateConflict = await this.prisma.interview.findFirst({
+        where: {
+          applicationId: params.applicationId,
+          status: InterviewStatus.SCHEDULED as any,
+          scheduledStart: { not: null, lt: end },
+          scheduledEnd: { not: null, gt: start },
+        },
+      });
 
-    if (candidateConflict) {
-      throw new ConflictException(
-        'Scheduling Conflict: Candidate already has an active interview scheduled during this exact time window.',
-      );
+      if (candidateConflict) {
+        throw new ConflictException(
+          'Scheduling Conflict: Candidate already has an active interview scheduled during this exact time window.',
+        );
+      }
     }
 
     // Atomic schedule creation
@@ -128,7 +135,7 @@ export class InterviewsService {
           scheduledStart: start,
           scheduledEnd: end,
           durationMinutes: duration,
-          meetingDetails: params.meetingDetails,
+          meetingDetails: params.meetingDetails || '',
           instructions: params.instructions,
           remarks: params.remarks,
           status: InterviewStatus.SCHEDULED as any,
@@ -161,7 +168,9 @@ export class InterviewsService {
           previousStatus: app.status,
           newStatus: ApplicationStatus.INTERVIEW_SCHEDULED as any,
           changedById: params.creatorId,
-          reason: `Interview scheduled: ${params.roundType} on ${start.toLocaleDateString()}`,
+          reason: start
+            ? `Interview scheduled: ${params.roundType} on ${start.toLocaleDateString()}`
+            : `Interview round scheduled: ${params.roundType} (Date & Time TBD)`,
         },
       });
 
@@ -187,7 +196,7 @@ export class InterviewsService {
         applicationId: params.applicationId,
         candidateName: app.candidate.fullName,
         interviewerName: interviewer.fullName,
-        scheduledStart: start.toISOString(),
+        scheduledStart: start ? start.toISOString() : null,
         remarks: params.remarks,
       },
     });

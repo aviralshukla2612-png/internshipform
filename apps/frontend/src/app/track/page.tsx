@@ -194,10 +194,16 @@ export default function TrackPage() {
                       </div>
                       <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-1">
                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                        {new Date(intv.scheduledStart).toLocaleString("en-IN", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })} ({intv.durationMinutes} mins)
+                        {intv.scheduledStart ? (
+                          <>
+                            {new Date(intv.scheduledStart).toLocaleString("en-IN", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })} ({intv.durationMinutes} mins)
+                          </>
+                        ) : (
+                          <span>Date & Time to be confirmed</span>
+                        )}
                       </p>
                       {intv.meetingDetails && (
                         <div className="mt-2 text-xs text-blue-700 bg-blue-50 p-2 rounded flex items-center gap-1.5">

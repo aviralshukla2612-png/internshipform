@@ -491,8 +491,8 @@ model Interview {
   roundType         InterviewRoundType
   roundOrder        Int                     @default(1)
   interviewMode     InterviewMode
-  scheduledStart    DateTime
-  scheduledEnd      DateTime
+  scheduledStart    DateTime?
+  scheduledEnd      DateTime?
   durationMinutes   Int                     @default(45)
   meetingDetails    String                  @db.Text // e.g. Google Meet link or office address
   instructions      String?                 @db.Text

@@ -104,16 +104,20 @@ export class WhatsAppService {
     const companyName = companySetting?.value || 'Enterprise Corp';
     const interviewerName = interview.assignments[0]?.interviewer?.fullName || 'HR Interview Panel';
 
-    const interviewDate = interview.scheduledStart.toLocaleDateString('en-IN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-    const interviewTime = interview.scheduledStart.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const interviewDate = interview.scheduledStart
+      ? interview.scheduledStart.toLocaleDateString('en-IN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })
+      : 'Date to be confirmed';
+    const interviewTime = interview.scheduledStart
+      ? interview.scheduledStart.toLocaleTimeString('en-IN', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'Time to be confirmed';
 
     // Create tracking record in DB
     const templateName = 'interview_invitation_official';

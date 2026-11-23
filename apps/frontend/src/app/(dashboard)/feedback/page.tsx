@@ -127,7 +127,7 @@ export default function FeedbackPage() {
               <option value="">-- Choose scheduled interview --</option>
               {interviews?.map((intv: any) => (
                 <option key={intv.id} value={intv.id}>
-                  {intv.application.candidate.fullName} - {intv.roundType} ({new Date(intv.scheduledStart).toLocaleDateString()})
+                  {intv.application.candidate.fullName} - {intv.roundType} ({intv.scheduledStart ? new Date(intv.scheduledStart).toLocaleDateString() : "Date TBD"})
                 </option>
               ))}
             </select>

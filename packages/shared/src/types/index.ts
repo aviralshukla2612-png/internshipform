@@ -145,8 +145,8 @@ export interface ScheduleInterviewDto {
   applicationId: string;
   roundType: InterviewRoundType;
   interviewMode: InterviewMode;
-  scheduledDate: string; // YYYY-MM-DD
-  startTime: string; // HH:mm
+  scheduledDate?: string; // YYYY-MM-DD (Optional)
+  startTime?: string; // HH:mm (Optional)
   durationMinutes: number;
   interviewerId: string;
   meetingDetails: string;

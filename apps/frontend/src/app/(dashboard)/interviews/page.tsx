@@ -100,7 +100,9 @@ export default function InterviewsPage() {
                 <div className="flex items-center gap-4 text-slate-500 text-[11px] flex-wrap">
                   <span className="flex items-center gap-1 font-semibold text-slate-700">
                     <Clock className="w-3.5 h-3.5 text-blue-600" />
-                    {new Date(intv.scheduledStart).toLocaleString()} ({intv.durationMinutes} mins)
+                    {intv.scheduledStart
+                      ? `${new Date(intv.scheduledStart).toLocaleString()} (${intv.durationMinutes} mins)`
+                      : "Date & Time: TBD"}
                   </span>
                   <span className="flex items-center gap-1">
                     <User className="w-3.5 h-3.5 text-purple-600" />
