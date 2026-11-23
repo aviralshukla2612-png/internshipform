@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
@@ -31,13 +31,109 @@ import { ApplicationStatus, Gender } from "@recruitment/shared";
 export default function ApplicationsPage() {
   const queryClient = useQueryClient();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("");
-  const [selectedGender, setSelectedGender] = useState<string>("");
-  const [isFresherFilter, setIsFresherFilter] = useState<string>("");
+  // Persistent state initialized from URL query params or sessionStorage fallback
+  const [page, setPage] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("page");
+      if (p && !isNaN(Number(p))) return Math.max(1, Number(p));
+      const cached = sessionStorage.getItem("app_table_page");
+      if (cached && !isNaN(Number(cached))) return Math.max(1, Number(cached));
+    }
+    return 1;
+  });
+
+  const [pageSize, setPageSize] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      const l = new URLSearchParams(window.location.search).get("limit");
+      if (l && !isNaN(Number(l))) return Number(l);
+      const cached = sessionStorage.getItem("app_table_limit");
+      if (cached && !isNaN(Number(cached))) return Number(cached);
+    }
+    return 10;
+  });
+
+  const [search, setSearch] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const s = new URLSearchParams(window.location.search).get("search");
+      if (s !== null) return s;
+      const cached = sessionStorage.getItem("app_table_search");
+      if (cached !== null) return cached;
+    }
+    return "";
+  });
+
+  const [selectedStatus, setSelectedStatus] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const st = new URLSearchParams(window.location.search).get("status");
+      if (st !== null) return st;
+      const cached = sessionStorage.getItem("app_table_status");
+      if (cached !== null) return cached;
+    }
+    return "";
+  });
+
+  const [selectedGender, setSelectedGender] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const g = new URLSearchParams(window.location.search).get("gender");
+      if (g !== null) return g;
+      const cached = sessionStorage.getItem("app_table_gender");
+      if (cached !== null) return cached;
+    }
+    return "";
+  });
+
+  const [isFresherFilter, setIsFresherFilter] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const f = new URLSearchParams(window.location.search).get("isFresher");
+      if (f !== null) return f;
+      const cached = sessionStorage.getItem("app_table_fresher");
+      if (cached !== null) return cached;
+    }
+    return "";
+  });
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Sync state to URL and sessionStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams();
+    if (page > 1) params.set("page", String(page));
+    if (pageSize !== 10) params.set("limit", String(pageSize));
+    if (search.trim()) params.set("search", search.trim());
+    if (selectedStatus) params.set("status", selectedStatus);
+    if (selectedGender) params.set("gender", selectedGender);
+    if (isFresherFilter !== "") params.set("isFresher", isFresherFilter);
+
+    const queryStr = params.toString();
+    const newUrl = queryStr ? `${window.location.pathname}?${queryStr}` : window.location.pathname;
+
+    window.history.replaceState(null, "", newUrl);
+
+    sessionStorage.setItem("app_table_page", String(page));
+    sessionStorage.setItem("app_table_limit", String(pageSize));
+    sessionStorage.setItem("app_table_search", search);
+    sessionStorage.setItem("app_table_status", selectedStatus);
+    sessionStorage.setItem("app_table_gender", selectedGender);
+    sessionStorage.setItem("app_table_fresher", isFresherFilter);
+  }, [page, pageSize, search, selectedStatus, selectedGender, isFresherFilter]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setPage(Math.max(1, Number(params.get("page")) || 1));
+      setPageSize(Number(params.get("limit")) || 10);
+      setSearch(params.get("search") || "");
+      setSelectedStatus(params.get("status") || "");
+      setSelectedGender(params.get("gender") || "");
+      setIsFresherFilter(params.get("isFresher") !== null ? (params.get("isFresher") as string) : "");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Bulk status update modal
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -504,7 +600,7 @@ export default function ApplicationsPage() {
 
                       <td className="p-3 text-right space-x-1 whitespace-nowrap">
                         <Link
-                          href={`/candidates/${app.id}`}
+                          href={`/candidates/${app.id}${typeof window !== "undefined" && window.location.search ? `?from=${encodeURIComponent(window.location.search)}` : ""}`}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition"
                         >
                           <Eye className="w-3.5 h-3.5" /> View

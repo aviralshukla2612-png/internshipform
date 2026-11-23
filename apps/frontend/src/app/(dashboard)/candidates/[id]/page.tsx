@@ -191,13 +191,29 @@ Emperor Smart Solutions`;
     },
   });
 
+  const handleBack = () => {
+    if (typeof window !== "undefined") {
+      const sp = new URLSearchParams(window.location.search);
+      const fromQuery = sp.get("from");
+      if (fromQuery) {
+        router.push(`/applications${decodeURIComponent(fromQuery)}`);
+        return;
+      }
+      if (window.history.length > 1) {
+        router.back();
+        return;
+      }
+    }
+    router.push("/applications");
+  };
+
   // Delete Application Mutation
   const deleteMutation = useMutation({
     mutationFn: () => apiClient(`/applications/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applicationsList"] });
       queryClient.invalidateQueries({ queryKey: ["dashboardMetrics"] });
-      router.push("/applications");
+      handleBack();
     },
   });
 
@@ -258,9 +274,13 @@ Emperor Smart Solutions`;
             </div>
           )}
           <div>
-            <Link href="/applications" className="text-xs text-blue-600 font-medium hover:underline flex items-center gap-1 mb-1">
+            <button
+              type="button"
+              onClick={handleBack}
+              className="text-xs text-blue-600 font-medium hover:underline flex items-center gap-1 mb-1 focus:outline-none bg-transparent border-0 p-0 cursor-pointer"
+            >
               <ChevronLeft className="w-3.5 h-3.5" /> Back to applications table
-            </Link>
+            </button>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">{candidate.fullName}</h1>
               <span className="font-mono text-xs px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md font-bold">
