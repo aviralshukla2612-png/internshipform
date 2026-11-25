@@ -66,6 +66,31 @@ export class InterviewsController {
     return this.interviewsService.cancelInterview(id, reason, userId);
   }
 
+  @Get()
+  @Permissions('interviews:read')
+  @ApiOperation({ summary: 'List and paginate interviews with date and search filters' })
+  async findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('interviewerId') interviewerId?: string,
+  ) {
+    return this.interviewsService.findAllInterviews({
+      page,
+      limit,
+      date,
+      startDate,
+      endDate,
+      status,
+      search,
+      interviewerId,
+    });
+  }
+
   @Get('calendar')
   @Permissions('interviews:read')
   @ApiOperation({ summary: 'Get calendar events for Day/Week/Month views' })

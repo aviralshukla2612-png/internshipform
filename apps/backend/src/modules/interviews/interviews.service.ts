@@ -279,4 +279,122 @@ export class InterviewsService {
       },
     });
   }
+
+  async findAllInterviews(query: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    status?: string;
+    search?: string;
+    interviewerId?: string;
+  }) {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 10));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (query.status && query.status.trim() && query.status.trim() !== 'ALL') {
+      where.status = query.status.trim() as any;
+    }
+
+    if (query.interviewerId && query.interviewerId.trim()) {
+      where.assignments = { some: { interviewerId: query.interviewerId.trim() } };
+    }
+
+    // Date filtering: specific date or custom range
+    if (query.startDate || query.endDate) {
+      where.scheduledStart = {};
+      if (query.startDate) {
+        where.scheduledStart.gte = new Date(query.startDate);
+      }
+      if (query.endDate) {
+        where.scheduledStart.lte = new Date(query.endDate);
+      }
+    } else if (query.date && query.date.trim()) {
+      const dateStr = query.date.trim();
+      const target = new Date(dateStr);
+      if (!isNaN(target.getTime())) {
+        const dayStart = new Date(target);
+        dayStart.setHours(0, 0, 0, 0);
+        const dayEnd = new Date(target);
+        dayEnd.setHours(23, 59, 59, 999);
+        where.scheduledStart = {
+          gte: dayStart,
+          lte: dayEnd,
+        };
+      }
+    }
+
+    // Text search across candidate details, remarks, and venue
+    if (query.search && query.search.trim()) {
+      const term = query.search.trim();
+      where.OR = [
+        { application: { candidate: { fullName: { contains: term, mode: 'insensitive' } } } },
+        { application: { candidate: { email: { contains: term, mode: 'insensitive' } } } },
+        { application: { candidate: { mobileNumber: { contains: term } } } },
+        { application: { candidate: { whatsappNumber: { contains: term } } } },
+        { application: { applicationCode: { contains: term, mode: 'insensitive' } } },
+        { remarks: { contains: term, mode: 'insensitive' } },
+        { meetingDetails: { contains: term, mode: 'insensitive' } },
+      ];
+    }
+
+    const [total, data] = await Promise.all([
+      this.prisma.interview.count({ where }),
+      this.prisma.interview.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { scheduledStart: 'desc' },
+        include: {
+          application: {
+            include: {
+              candidate: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                  mobileNumber: true,
+                  whatsappNumber: true,
+                  gender: true,
+                  profilePhotoDocId: true,
+                },
+              },
+              jobPosition: {
+                select: {
+                  id: true,
+                  title: true,
+                  department: true,
+                },
+              },
+            },
+          },
+          assignments: {
+            include: {
+              interviewer: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
 }
