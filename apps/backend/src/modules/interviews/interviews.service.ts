@@ -84,31 +84,9 @@ export class InterviewsService {
     }
     targetInterviewerId = interviewer.id;
 
-    // CONFLICT ENGINE: Check Interviewer Availability (only if date/time specified)
+    // Overlapping allowed: multiple candidates can be booked in the same time slot.
+    // Check only if the exact same candidate already has an active interview in this time window.
     if (start && end) {
-      const interviewerConflict = await this.prisma.interview.findFirst({
-        where: {
-          status: InterviewStatus.SCHEDULED as any,
-          assignments: {
-            some: { interviewerId: targetInterviewerId },
-          },
-          scheduledStart: { not: null, lt: end },
-          scheduledEnd: { not: null, gt: start },
-        },
-        include: {
-          application: {
-            include: { candidate: { select: { fullName: true } } },
-          },
-        },
-      });
-
-      if (interviewerConflict && interviewerConflict.scheduledStart && interviewerConflict.scheduledEnd) {
-        throw new ConflictException(
-          `Scheduling Conflict: Interviewer ${interviewer.fullName} is already booked for another interview with candidate "${interviewerConflict.application.candidate.fullName}" from ${interviewerConflict.scheduledStart.toLocaleTimeString()} to ${interviewerConflict.scheduledEnd.toLocaleTimeString()}.`,
-        );
-      }
-
-      // CONFLICT ENGINE: Check Candidate Availability
       const candidateConflict = await this.prisma.interview.findFirst({
         where: {
           applicationId: params.applicationId,
@@ -120,7 +98,7 @@ export class InterviewsService {
 
       if (candidateConflict) {
         throw new ConflictException(
-          'Scheduling Conflict: Candidate already has an active interview scheduled during this exact time window.',
+          'Scheduling Conflict: This candidate already has an active interview scheduled during this exact time window.',
         );
       }
     }
@@ -225,23 +203,6 @@ export class InterviewsService {
     }
     const duration = durationMinutes || existing.durationMinutes;
     const end = new Date(start.getTime() + duration * 60 * 1000);
-
-    // Conflict Check
-    const leadAssignment = existing.assignments.find((a) => a.isLead) || existing.assignments[0];
-    if (leadAssignment) {
-      const conflict = await this.prisma.interview.findFirst({
-        where: {
-          id: { not: id },
-          status: InterviewStatus.SCHEDULED as any,
-          assignments: { some: { interviewerId: leadAssignment.interviewerId } },
-          scheduledStart: { lt: end },
-          scheduledEnd: { gt: start },
-        },
-      });
-      if (conflict) {
-        throw new ConflictException('Selected slot conflicts with interviewer existing schedule.');
-      }
-    }
 
     const updated = await this.prisma.interview.update({
       where: { id },
