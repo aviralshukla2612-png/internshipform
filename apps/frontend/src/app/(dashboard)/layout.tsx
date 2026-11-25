@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/providers";
 import {
@@ -26,9 +26,11 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentStatus = searchParams?.get("status") ?? "";
   const { user, isLoading, logout, hasRole, hasPermission } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -40,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setMobileMenuOpen(false);
-  }, [pathname]);
+  }, [pathname, currentStatus]);
 
   if (isLoading || !user) {
     return (
@@ -49,6 +51,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  // Helper to determine exact active nav state including query parameters
+  const isItemActive = (href: string) => {
+    if (href === "/applications?status=SHORTLISTED") {
+      return pathname === "/applications" && currentStatus === "SHORTLISTED";
+    }
+    if (href === "/applications") {
+      return pathname === "/applications" && currentStatus !== "SHORTLISTED";
+    }
+    return pathname === href;
+  };
 
   // 15 Standard Navigation Items with granular RBAC visibility
   const navItems = [
@@ -93,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {navItems
             .filter((item) => item.show)
             .map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = isItemActive(item.href);
               return (
                 <Link
                   key={item.label}
@@ -176,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {navItems
                 .filter((item) => item.show)
                 .map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = isItemActive(item.href);
                   return (
                     <Link
                       key={item.label}
@@ -260,5 +273,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto">{children}</main>
       </div>
     </div>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+        </div>
+      }
+    >
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
   );
 }

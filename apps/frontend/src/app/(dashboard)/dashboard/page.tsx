@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api";
 import {
@@ -56,15 +57,15 @@ export default function DashboardPage() {
   }
 
   const kpis = [
-    { label: "Total Applications", value: metrics.totalApplications, icon: Users, color: "text-blue-600 bg-blue-50" },
-    { label: "New Applications", value: metrics.newApplications, icon: Clock, color: "text-amber-600 bg-amber-50" },
-    { label: "Under Review", value: metrics.underReview, icon: FileCheck, color: "text-indigo-600 bg-indigo-50" },
-    { label: "Shortlisted", value: metrics.shortlistedCandidates, icon: UserCheck, color: "text-purple-600 bg-purple-50" },
-    { label: "Interviews Scheduled", value: metrics.interviewsScheduled, icon: Calendar, color: "text-cyan-600 bg-cyan-50" },
-    { label: "Interviews Completed", value: metrics.interviewsCompleted, icon: CheckCircle, color: "text-emerald-600 bg-emerald-50" },
-    { label: "Selected / Hired", value: metrics.selectedCandidates, icon: Award, color: "text-green-600 bg-green-50" },
-    { label: "Rejected Candidates", value: metrics.rejectedCandidates, icon: UserX, color: "text-rose-600 bg-rose-50" },
-    { label: "Pending Feedback", value: metrics.pendingFeedback, icon: HelpCircle, color: "text-orange-600 bg-orange-50" },
+    { label: "Total Applications", value: metrics.totalApplications, icon: Users, color: "text-blue-600 bg-blue-50", href: "/applications" },
+    { label: "New Applications", value: metrics.newApplications, icon: Clock, color: "text-amber-600 bg-amber-50", href: "/applications?status=NEW" },
+    { label: "Under Review", value: metrics.underReview, icon: FileCheck, color: "text-indigo-600 bg-indigo-50", href: "/applications?status=UNDER_REVIEW" },
+    { label: "Shortlisted", value: metrics.shortlistedCandidates, icon: UserCheck, color: "text-purple-600 bg-purple-50", href: "/applications?status=SHORTLISTED" },
+    { label: "Interviews Scheduled", value: metrics.interviewsScheduled, icon: Calendar, color: "text-cyan-600 bg-cyan-50", href: "/interviews" },
+    { label: "Interviews Completed", value: metrics.interviewsCompleted, icon: CheckCircle, color: "text-emerald-600 bg-emerald-50", href: "/interviews" },
+    { label: "Selected / Hired", value: metrics.selectedCandidates, icon: Award, color: "text-green-600 bg-green-50", href: "/applications?status=SELECTED" },
+    { label: "Rejected Candidates", value: metrics.rejectedCandidates, icon: UserX, color: "text-rose-600 bg-rose-50", href: "/applications?status=REJECTED" },
+    { label: "Pending Feedback", value: metrics.pendingFeedback, icon: HelpCircle, color: "text-orange-600 bg-orange-50", href: "/feedback" },
   ];
 
   const experienceData = [
@@ -93,15 +94,21 @@ export default function DashboardPage() {
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {kpis.map((kpi, idx) => (
-          <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs">
+          <Link
+            key={idx}
+            href={kpi.href}
+            className="bg-white border border-slate-200 rounded-xl p-3.5 sm:p-4 shadow-xs hover:border-blue-400 hover:shadow-md transition group block cursor-pointer"
+          >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider">{kpi.label}</span>
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider group-hover:text-blue-600 transition">
+                {kpi.label}
+              </span>
               <div className={`p-1.5 sm:p-2 rounded-lg ${kpi.color}`}>
                 <kpi.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
             <p className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-2">{kpi.value}</p>
-          </div>
+          </Link>
         ))}
       </div>
 

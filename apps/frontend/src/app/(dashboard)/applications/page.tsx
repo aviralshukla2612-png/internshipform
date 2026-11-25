@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { apiClient } from "@/lib/api";
@@ -28,14 +29,24 @@ import {
 } from "lucide-react";
 import { ApplicationStatus, Gender } from "@recruitment/shared";
 
-export default function ApplicationsPage() {
+function ApplicationsContent() {
   const queryClient = useQueryClient();
+  const searchParams = useSearchParams();
+
+  // Read current URL query parameters
+  const urlStatus = searchParams.get("status");
+  const urlPage = searchParams.get("page");
+  const urlLimit = searchParams.get("limit");
+  const urlSearch = searchParams.get("search");
+  const urlGender = searchParams.get("gender");
+  const urlFresher = searchParams.get("isFresher");
+
+  const isDirectStatusView = urlStatus !== null && urlStatus !== "";
 
   // Persistent state initialized from URL query params or sessionStorage fallback
   const [page, setPage] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get("page");
-      if (p && !isNaN(Number(p))) return Math.max(1, Number(p));
+    if (urlPage && !isNaN(Number(urlPage))) return Math.max(1, Number(urlPage));
+    if (!isDirectStatusView && typeof window !== "undefined") {
       const cached = sessionStorage.getItem("app_table_page");
       if (cached && !isNaN(Number(cached))) return Math.max(1, Number(cached));
     }
@@ -43,9 +54,8 @@ export default function ApplicationsPage() {
   });
 
   const [pageSize, setPageSize] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      const l = new URLSearchParams(window.location.search).get("limit");
-      if (l && !isNaN(Number(l))) return Number(l);
+    if (urlLimit && !isNaN(Number(urlLimit))) return Number(urlLimit);
+    if (!isDirectStatusView && typeof window !== "undefined") {
       const cached = sessionStorage.getItem("app_table_limit");
       if (cached && !isNaN(Number(cached))) return Number(cached);
     }
@@ -53,9 +63,8 @@ export default function ApplicationsPage() {
   });
 
   const [search, setSearch] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const s = new URLSearchParams(window.location.search).get("search");
-      if (s !== null) return s;
+    if (urlSearch !== null) return urlSearch;
+    if (!isDirectStatusView && typeof window !== "undefined") {
       const cached = sessionStorage.getItem("app_table_search");
       if (cached !== null) return cached;
     }
@@ -63,9 +72,8 @@ export default function ApplicationsPage() {
   });
 
   const [selectedStatus, setSelectedStatus] = useState<string>(() => {
+    if (urlStatus !== null) return urlStatus;
     if (typeof window !== "undefined") {
-      const st = new URLSearchParams(window.location.search).get("status");
-      if (st !== null) return st;
       const cached = sessionStorage.getItem("app_table_status");
       if (cached !== null) return cached;
     }
@@ -73,9 +81,8 @@ export default function ApplicationsPage() {
   });
 
   const [selectedGender, setSelectedGender] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const g = new URLSearchParams(window.location.search).get("gender");
-      if (g !== null) return g;
+    if (urlGender !== null) return urlGender;
+    if (!isDirectStatusView && typeof window !== "undefined") {
       const cached = sessionStorage.getItem("app_table_gender");
       if (cached !== null) return cached;
     }
@@ -83,9 +90,8 @@ export default function ApplicationsPage() {
   });
 
   const [isFresherFilter, setIsFresherFilter] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const f = new URLSearchParams(window.location.search).get("isFresher");
-      if (f !== null) return f;
+    if (urlFresher !== null) return urlFresher;
+    if (!isDirectStatusView && typeof window !== "undefined") {
       const cached = sessionStorage.getItem("app_table_fresher");
       if (cached !== null) return cached;
     }
@@ -93,6 +99,37 @@ export default function ApplicationsPage() {
   });
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Synchronize state immediately when URL searchParams change (e.g. clicking "Shortlisted" in sidebar)
+  useEffect(() => {
+    const currentUrlStatus = searchParams.get("status") ?? "";
+    setSelectedStatus(currentUrlStatus);
+
+    if (searchParams.has("page")) {
+      const p = Number(searchParams.get("page"));
+      setPage(!isNaN(p) && p > 0 ? p : 1);
+    } else if (currentUrlStatus !== selectedStatus) {
+      setPage(1);
+    }
+
+    if (searchParams.has("search")) {
+      setSearch(searchParams.get("search") ?? "");
+    } else if (currentUrlStatus !== selectedStatus) {
+      setSearch("");
+    }
+
+    if (searchParams.has("gender")) {
+      setSelectedGender(searchParams.get("gender") ?? "");
+    } else if (currentUrlStatus !== selectedStatus) {
+      setSelectedGender("");
+    }
+
+    if (searchParams.has("isFresher")) {
+      setIsFresherFilter(searchParams.get("isFresher") ?? "");
+    } else if (currentUrlStatus !== selectedStatus) {
+      setIsFresherFilter("");
+    }
+  }, [searchParams]);
 
   // Sync state to URL and sessionStorage
   useEffect(() => {
@@ -634,6 +671,35 @@ export default function ApplicationsPage() {
                               <XCircle className="w-4 h-4" />
                             </button>
                           </>
+                        ) : app.status === ApplicationStatus.INTERVIEW_SCHEDULED ? (
+                          <>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.NEW,
+                                  reason: "Shortlist/Interview undone from dashboard",
+                                })
+                              }
+                              title="Undo Shortlist/Interview (Reset to New)"
+                              className="p-1 rounded text-amber-600 hover:bg-amber-50 transition"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() =>
+                                updateStatusMutation.mutate({
+                                  id: app.id,
+                                  status: ApplicationStatus.REJECTED,
+                                  reason: "Rejected from dashboard",
+                                })
+                              }
+                              title="Reject Candidate"
+                              className="p-1 rounded text-rose-600 hover:bg-rose-50 transition"
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </button>
+                          </>
                         ) : app.status === ApplicationStatus.REJECTED ? (
                           <>
                             <button
@@ -1032,5 +1098,20 @@ export default function ApplicationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ApplicationsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-500">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+          <p className="text-xs font-semibold">Loading applications data...</p>
+        </div>
+      }
+    >
+      <ApplicationsContent />
+    </Suspense>
   );
 }

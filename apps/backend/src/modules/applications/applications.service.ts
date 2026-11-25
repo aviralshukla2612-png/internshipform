@@ -447,7 +447,16 @@ export class ApplicationsService {
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    if (query.status) where.status = query.status;
+    if (query.status) {
+      if (query.status === ApplicationStatus.SHORTLISTED) {
+        // Shortlisted candidates include candidates currently shortlisted and those who progressed to interview scheduled
+        where.status = {
+          in: [ApplicationStatus.SHORTLISTED, ApplicationStatus.INTERVIEW_SCHEDULED],
+        };
+      } else {
+        where.status = query.status;
+      }
+    }
     if (query.jobId) where.jobPositionId = query.jobId;
     if (query.isFresher !== undefined) where.isFresher = query.isFresher;
 
