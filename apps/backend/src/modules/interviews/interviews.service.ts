@@ -29,6 +29,27 @@ export interface ScheduleInterviewParams {
   creatorId: string;
 }
 
+/**
+ * Normalizes any timestamp string into an exact Date object interpreted in Asia/Kolkata (+05:30)
+ * if no timezone offset is explicitly provided by the caller.
+ */
+function parseToISTDate(dateInput: string | Date): Date {
+  if (dateInput instanceof Date) return dateInput;
+  let str = (dateInput || '').trim();
+  if (!str) return new Date(NaN);
+
+  if (!str.endsWith('Z') && !/[+-]\d{2}:\d{2}$/.test(str)) {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(str)) {
+      str = `${str}:00+05:30`;
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(str)) {
+      str = `${str}+05:30`;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      str = `${str}T00:00:00+05:30`;
+    }
+  }
+  return new Date(str);
+}
+
 @Injectable()
 export class InterviewsService {
   private readonly logger = new Logger(InterviewsService.name);
@@ -44,7 +65,7 @@ export class InterviewsService {
     const duration = Math.max(15, Math.min(240, Number(params.durationMinutes) || 45));
 
     if (params.scheduledStart && params.scheduledStart.trim()) {
-      start = new Date(params.scheduledStart);
+      start = parseToISTDate(params.scheduledStart);
       if (isNaN(start.getTime())) {
         throw new BadRequestException('Invalid interview start timestamp. Please pick a valid date and time.');
       }
@@ -197,7 +218,10 @@ export class InterviewsService {
       throw new NotFoundException('Interview not found');
     }
 
-    const start = new Date(newStartIso);
+    const start = parseToISTDate(newStartIso);
+    if (isNaN(start.getTime())) {
+      throw new BadRequestException('Invalid rescheduled start timestamp.');
+    }
     if (start < new Date()) {
       throw new BadRequestException('Rescheduled date cannot be in the past.');
     }
@@ -304,23 +328,20 @@ export class InterviewsService {
       where.assignments = { some: { interviewerId: query.interviewerId.trim() } };
     }
 
-    // Date filtering: specific date or custom range
+    // Date filtering: specific date or custom range (strictly in IST Asia/Kolkata)
     if (query.startDate || query.endDate) {
       where.scheduledStart = {};
       if (query.startDate) {
-        where.scheduledStart.gte = new Date(query.startDate);
+        where.scheduledStart.gte = parseToISTDate(query.startDate);
       }
       if (query.endDate) {
-        where.scheduledStart.lte = new Date(query.endDate);
+        where.scheduledStart.lte = parseToISTDate(query.endDate);
       }
     } else if (query.date && query.date.trim()) {
       const dateStr = query.date.trim();
-      const target = new Date(dateStr);
-      if (!isNaN(target.getTime())) {
-        const dayStart = new Date(target);
-        dayStart.setHours(0, 0, 0, 0);
-        const dayEnd = new Date(target);
-        dayEnd.setHours(23, 59, 59, 999);
+      const dayStart = parseToISTDate(`${dateStr}T00:00:00`);
+      const dayEnd = parseToISTDate(`${dateStr}T23:59:59.999`);
+      if (!isNaN(dayStart.getTime()) && !isNaN(dayEnd.getTime())) {
         where.scheduledStart = {
           gte: dayStart,
           lte: dayEnd,

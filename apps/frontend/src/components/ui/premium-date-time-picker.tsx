@@ -30,11 +30,73 @@ const SHORT_DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 const PRESET_HOURS = [
   { label: "10:00 AM", h: 10, m: 0, p: "AM" },
+  { label: "11:00 AM", h: 11, m: 0, p: "AM" },
   { label: "11:30 AM", h: 11, m: 30, p: "AM" },
   { label: "02:00 PM", h: 2, m: 0, p: "PM" },
   { label: "03:30 PM", h: 3, m: 30, p: "PM" },
   { label: "05:00 PM", h: 5, m: 0, p: "PM" },
 ];
+
+/**
+ * Extracts exact calendar and clock components in Indian Standard Time (Asia/Kolkata).
+ * Eliminates browser/container timezone skew.
+ */
+function parseISTComponents(val?: string | null) {
+  if (!val) return null;
+  let dateStr = val.trim();
+  if (!dateStr.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(dateStr)) {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateStr)) {
+      dateStr = `${dateStr}:00+05:30`;
+    } else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(dateStr)) {
+      dateStr = `${dateStr}+05:30`;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      dateStr = `${dateStr}T00:00:00+05:30`;
+    }
+  }
+
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(d);
+    const map: Record<string, string> = {};
+    for (const part of parts) {
+      map[part.type] = part.value;
+    }
+
+    const year = parseInt(map.year, 10);
+    const month = parseInt(map.month, 10) - 1; // 0-indexed month
+    const day = parseInt(map.day, 10);
+    let hour24 = parseInt(map.hour, 10);
+    if (hour24 === 24) hour24 = 0;
+    const minute = parseInt(map.minute, 10);
+
+    const period: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+
+    return { year, month, day, hour24, minute, hour12, period, date: d };
+  } catch {
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const day = d.getDate();
+    const hour24 = d.getHours();
+    const minute = d.getMinutes();
+    const period: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+    return { year, month, day, hour24, minute, hour12, period, date: d };
+  }
+}
 
 export function PremiumDateTimePicker({
   value,
@@ -49,41 +111,46 @@ export function PremiumDateTimePicker({
   const [activeTab, setActiveTab] = useState<"date" | "time">("date");
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Parse incoming value or default to tomorrow at 10:00 AM
-  const parsedDate = value ? new Date(value) : null;
-  const isValidDate = parsedDate && !isNaN(parsedDate.getTime());
+  // Compute initial state parsed strictly in IST (Asia/Kolkata)
+  const initial = parseISTComponents(value);
+  const now = new Date();
+  const defaultTarget = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const tomorrowIST = parseISTComponents(defaultTarget.toISOString()) || {
+    year: defaultTarget.getFullYear(),
+    month: defaultTarget.getMonth(),
+    day: defaultTarget.getDate(),
+    hour12: 10,
+    minute: 0,
+    period: "AM" as const,
+  };
 
-  const initialYear = isValidDate ? parsedDate.getFullYear() : new Date().getFullYear();
-  const initialMonth = isValidDate ? parsedDate.getMonth() : new Date().getMonth();
-  const initialDay = isValidDate ? parsedDate.getDate() : new Date().getDate();
+  const initialYear = initial ? initial.year : tomorrowIST.year;
+  const initialMonth = initial ? initial.month : tomorrowIST.month;
+  const initialDay = initial ? initial.day : null;
 
-  // Time components in 12-hour format
-  const rawHour = isValidDate ? parsedDate.getHours() : 10;
-  const initialPeriod = rawHour >= 12 ? "PM" : "AM";
-  const initial12Hour = rawHour % 12 === 0 ? 12 : rawHour % 12;
-  const initialMinute = isValidDate ? parsedDate.getMinutes() : 0;
+  const initialHour = initial ? initial.hour12 : 10;
+  const initialMinute = initial ? initial.minute : 0;
+  const initialPeriod = initial ? initial.period : "AM";
 
   const [viewYear, setViewYear] = useState<number>(initialYear);
   const [viewMonth, setViewMonth] = useState<number>(initialMonth);
-  const [selectedDay, setSelectedDay] = useState<number | null>(isValidDate ? initialDay : null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(initialDay);
 
-  const [selectedHour, setSelectedHour] = useState<number>(initial12Hour);
+  const [selectedHour, setSelectedHour] = useState<number>(initialHour);
   const [selectedMinute, setSelectedMinute] = useState<number>(initialMinute);
   const [selectedPeriod, setSelectedPeriod] = useState<"AM" | "PM">(initialPeriod as "AM" | "PM");
 
-  // Keep internal state synchronized with prop value changes
+  // Keep internal state synchronized with prop value changes in IST
   useEffect(() => {
     if (value) {
-      const d = new Date(value);
-      if (!isNaN(d.getTime())) {
-        setViewYear(d.getFullYear());
-        setViewMonth(d.getMonth());
-        setSelectedDay(d.getDate());
-
-        const h = d.getHours();
-        setSelectedPeriod(h >= 12 ? "PM" : "AM");
-        setSelectedHour(h % 12 === 0 ? 12 : h % 12);
-        setSelectedMinute(d.getMinutes());
+      const parsed = parseISTComponents(value);
+      if (parsed) {
+        setViewYear(parsed.year);
+        setViewMonth(parsed.month);
+        setSelectedDay(parsed.day);
+        setSelectedPeriod(parsed.period);
+        setSelectedHour(parsed.hour12);
+        setSelectedMinute(parsed.minute);
       }
     }
   }, [value]);
@@ -103,7 +170,7 @@ export function PremiumDateTimePicker({
     };
   }, [isOpen]);
 
-  // Helper to commit combined date & time back to caller
+  // Helper to commit combined date & time back to caller with explicit Asia/Kolkata (+05:30) offset
   const commitValue = (
     y: number,
     m: number,
@@ -123,7 +190,8 @@ export function PremiumDateTimePicker({
     const formattedHour = String(hour24).padStart(2, "0");
     const formattedMinute = String(min).padStart(2, "0");
 
-    const isoString = `${y}-${formattedMonth}-${formattedDay}T${formattedHour}:${formattedMinute}`;
+    // Explicitly emit with +05:30 offset so backend and database never skew timezone
+    const isoString = `${y}-${formattedMonth}-${formattedDay}T${formattedHour}:${formattedMinute}:00+05:30`;
     onChange(isoString);
   };
 
@@ -181,13 +249,18 @@ export function PremiumDateTimePicker({
   const handleQuickDay = (daysOffset: number) => {
     const target = new Date();
     target.setDate(target.getDate() + daysOffset);
-    setViewYear(target.getFullYear());
-    setViewMonth(target.getMonth());
-    setSelectedDay(target.getDate());
+    const ist = parseISTComponents(target.toISOString()) || {
+      year: target.getFullYear(),
+      month: target.getMonth(),
+      day: target.getDate(),
+    };
+    setViewYear(ist.year);
+    setViewMonth(ist.month);
+    setSelectedDay(ist.day);
     commitValue(
-      target.getFullYear(),
-      target.getMonth(),
-      target.getDate(),
+      ist.year,
+      ist.month,
+      ist.day,
       selectedHour,
       selectedMinute,
       selectedPeriod,
@@ -205,14 +278,9 @@ export function PremiumDateTimePicker({
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
   const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
 
-  // Formatted display value
-  const displayValue = isValidDate
-    ? `${parsedDate.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })} at ${String(selectedHour).padStart(2, "0")}:${String(selectedMinute).padStart(2, "0")} ${selectedPeriod}`
+  // Formatted display value directly in IST
+  const displayValue = selectedDay
+    ? `${MONTH_NAMES[viewMonth].substring(0, 3)} ${selectedDay}, ${viewYear} at ${String(selectedHour).padStart(2, "0")}:${String(selectedMinute).padStart(2, "0")} ${selectedPeriod}`
     : "";
 
   const years = [];

@@ -197,6 +197,7 @@ export default function TrackPage() {
                         {intv.scheduledStart ? (
                           <>
                             {new Date(intv.scheduledStart).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
                               dateStyle: "medium",
                               timeStyle: "short",
                             })} ({intv.durationMinutes} mins)

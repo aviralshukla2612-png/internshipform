@@ -29,6 +29,24 @@ import {
 
 type DatePreset = "ALL" | "TODAY" | "TOMORROW" | "THIS_WEEK" | "CUSTOM";
 
+function getTodayIST(): { y: number; m: number; d: number; dateStr: string } {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const dateStr = formatter.format(new Date());
+    const [y, m, d] = dateStr.split("-").map(Number);
+    return { y, m, d, dateStr };
+  } catch {
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return { y: now.getFullYear(), m: now.getMonth() + 1, d: now.getDate(), dateStr };
+  }
+}
+
 export default function InterviewsPage() {
   const queryClient = useQueryClient();
 
@@ -46,43 +64,60 @@ export default function InterviewsPage() {
   const [cancelModalItem, setCancelModalItem] = useState<any | null>(null);
   const [cancellationReason, setCancellationReason] = useState<string>("");
 
-  // Compute startDate & endDate ISO strings based on selected date filter
+  // Compute startDate & endDate ISO strings based on selected date filter (strictly in Asia/Kolkata)
   const { startDate, endDate } = useMemo(() => {
     if (datePreset === "ALL") {
       return { startDate: undefined, endDate: undefined };
     }
 
     if (datePreset === "TODAY") {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      return { startDate: start.toISOString(), endDate: end.toISOString() };
+      const { dateStr } = getTodayIST();
+      return {
+        startDate: `${dateStr}T00:00:00.000+05:30`,
+        endDate: `${dateStr}T23:59:59.999+05:30`,
+      };
     }
 
     if (datePreset === "TOMORROW") {
-      const now = new Date();
-      now.setDate(now.getDate() + 1);
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-      const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-      return { startDate: start.toISOString(), endDate: end.toISOString() };
+      const now = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const dateStr = formatter.format(now);
+      return {
+        startDate: `${dateStr}T00:00:00.000+05:30`,
+        endDate: `${dateStr}T23:59:59.999+05:30`,
+      };
     }
 
     if (datePreset === "THIS_WEEK") {
       const now = new Date();
       const day = now.getDay(); // 0 is Sunday
       const diffToMonday = (day === 0 ? -6 : 1) - day;
-      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday, 0, 0, 0, 0);
-      const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMonday + 6, 23, 59, 59, 999);
-      return { startDate: monday.toISOString(), endDate: sunday.toISOString() };
+      const monday = new Date(now.getTime() + diffToMonday * 24 * 60 * 60 * 1000);
+      const sunday = new Date(now.getTime() + (diffToMonday + 6) * 24 * 60 * 60 * 1000);
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const monStr = formatter.format(monday);
+      const sunStr = formatter.format(sunday);
+      return {
+        startDate: `${monStr}T00:00:00.000+05:30`,
+        endDate: `${sunStr}T23:59:59.999+05:30`,
+      };
     }
 
     if (datePreset === "CUSTOM" && customDate) {
-      const [y, m, d] = customDate.split("-").map(Number);
-      if (y && m && d) {
-        const start = new Date(y, m - 1, d, 0, 0, 0, 0);
-        const end = new Date(y, m - 1, d, 23, 59, 59, 999);
-        return { startDate: start.toISOString(), endDate: end.toISOString() };
-      }
+      return {
+        startDate: `${customDate}T00:00:00.000+05:30`,
+        endDate: `${customDate}T23:59:59.999+05:30`,
+      };
     }
 
     return { startDate: undefined, endDate: undefined };
@@ -170,6 +205,7 @@ export default function InterviewsPage() {
     try {
       const d = new Date(dateStr);
       return `${d.toLocaleString("en-US", {
+        timeZone: "Asia/Kolkata",
         month: "2-digit",
         day: "2-digit",
         year: "numeric",

@@ -18,8 +18,23 @@ export function formatDate(dateString?: string | Date | null): string {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
   return date.toLocaleDateString("en-IN", {
+    timeZone: "Asia/Kolkata",
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+}
+
+export function formatDateTime(dateString?: string | Date | null): string {
+  if (!dateString) return "N/A";
+  const date = new Date(dateString);
+  return date.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
   });
 }

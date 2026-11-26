@@ -115,6 +115,7 @@ export default function CandidateDetailPage() {
 
         const formattedStartDate = scheduledStart
           ? new Date(scheduledStart).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
               dateStyle: "full",
               timeStyle: "short",
             })
@@ -456,7 +457,16 @@ Emperor Smart Solutions`;
                     <strong>Date & Time:</strong>{" "}
                     {intv.scheduledStart ? (
                       <>
-                        {new Date(intv.scheduledStart).toLocaleString()} ({intv.durationMinutes} mins)
+                        {new Date(intv.scheduledStart).toLocaleString("en-US", {
+                          timeZone: "Asia/Kolkata",
+                          month: "2-digit",
+                          day: "2-digit",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          hour12: true,
+                        })} ({intv.durationMinutes} mins)
                       </>
                     ) : (
                       <span className="text-amber-700 bg-amber-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-amber-200">
@@ -478,7 +488,7 @@ Emperor Smart Solutions`;
                   <div className="pt-1">
                     <a
                       href={`https://api.whatsapp.com/send?phone=91${(candidate?.whatsappNumber || candidate?.mobileNumber || "").replace(/\D/g, "")}&text=${encodeURIComponent(
-                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${intv.scheduledStart ? new Date(intv.scheduledStart).toLocaleString("en-IN", { dateStyle: "full", timeStyle: "short" }) : "Date to be confirmed"} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}${intv.remarks ? ` Remarks: ${intv.remarks}` : ""}`,
+                        `Hello ${candidate?.fullName}! 👋 Greetings from Emperor Smart Solutions. Your interview is scheduled for ${intv.scheduledStart ? new Date(intv.scheduledStart).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "full", timeStyle: "short" }) : "Date to be confirmed"} (${intv.roundType?.replace(/_/g, " ")}). Venue: ${intv.meetingDetails}. Instructions: ${intv.instructions || "Please report on time with your credentials."}${intv.remarks ? ` Remarks: ${intv.remarks}` : ""}`,
                       )}`}
                       target="_blank"
                       rel="noopener noreferrer"

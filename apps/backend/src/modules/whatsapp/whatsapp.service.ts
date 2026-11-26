@@ -106,6 +106,7 @@ export class WhatsAppService {
 
     const interviewDate = interview.scheduledStart
       ? interview.scheduledStart.toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -114,8 +115,10 @@ export class WhatsAppService {
       : 'Date to be confirmed';
     const interviewTime = interview.scheduledStart
       ? interview.scheduledStart.toLocaleTimeString('en-IN', {
+          timeZone: 'Asia/Kolkata',
           hour: '2-digit',
           minute: '2-digit',
+          hour12: true,
         })
       : 'Time to be confirmed';
 
