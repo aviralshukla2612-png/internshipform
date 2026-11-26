@@ -4,6 +4,7 @@ import {
   BadRequestException,
   NotFoundException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -51,13 +52,41 @@ function parseToISTDate(dateInput: string | Date): Date {
 }
 
 @Injectable()
-export class InterviewsService {
+export class InterviewsService implements OnModuleInit {
   private readonly logger = new Logger(InterviewsService.name);
 
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
   ) {}
+
+  async onModuleInit() {
+    try {
+      const setting = await this.prisma.systemSetting.findUnique({
+        where: { key: 'IST_TIMEZONE_MIGRATION_V1' },
+      });
+      if (!setting) {
+        // Automatically shift legacy interview timestamps created before the IST fix by -5 hours 30 minutes
+        const updatedCount = await this.prisma.$executeRawUnsafe(`
+          UPDATE "Interview"
+          SET "scheduledStart" = "scheduledStart" - INTERVAL '5 hours 30 minutes',
+              "scheduledEnd" = "scheduledEnd" - INTERVAL '5 hours 30 minutes'
+          WHERE "createdAt" < '2026-11-26 10:30:00Z'
+            AND "scheduledStart" IS NOT NULL;
+        `);
+        await this.prisma.systemSetting.create({
+          data: {
+            key: 'IST_TIMEZONE_MIGRATION_V1',
+            value: `COMPLETED_${updatedCount}`,
+            description: 'One-time migration to correct legacy interview timestamps to Asia/Kolkata',
+          },
+        });
+        this.logger.log(`Successfully migrated legacy interview timestamps to IST (rows affected: ${updatedCount}).`);
+      }
+    } catch (err: any) {
+      this.logger.warn(`IST timezone migration check skipped or failed: ${err.message}`);
+    }
+  }
 
   async scheduleInterview(params: ScheduleInterviewParams) {
     let start: Date | null = null;
@@ -206,9 +235,11 @@ export class InterviewsService {
   async rescheduleInterview(
     id: string,
     newStartIso: string,
-    durationMinutes: number,
-    rescheduledById: string,
+    durationMinutes?: number,
+    rescheduledById?: string,
     reason?: string,
+    meetingDetails?: string,
+    remarks?: string,
   ) {
     const existing = await this.prisma.interview.findUnique({
       where: { id },
@@ -222,30 +253,41 @@ export class InterviewsService {
     if (isNaN(start.getTime())) {
       throw new BadRequestException('Invalid rescheduled start timestamp.');
     }
-    if (start < new Date()) {
-      throw new BadRequestException('Rescheduled date cannot be in the past.');
+    const pastLimit = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (start < pastLimit) {
+      throw new BadRequestException('Rescheduled date cannot be more than 24 hours in the past.');
     }
     const duration = durationMinutes || existing.durationMinutes;
     const end = new Date(start.getTime() + duration * 60 * 1000);
 
+    const dataToUpdate: any = {
+      scheduledStart: start,
+      scheduledEnd: end,
+      durationMinutes: duration,
+      status: InterviewStatus.SCHEDULED as any,
+    };
+    if (meetingDetails !== undefined) {
+      dataToUpdate.meetingDetails = meetingDetails;
+    }
+    if (remarks !== undefined) {
+      dataToUpdate.remarks = remarks;
+    }
+
     const updated = await this.prisma.interview.update({
       where: { id },
-      data: {
-        scheduledStart: start,
-        scheduledEnd: end,
-        durationMinutes: duration,
-        status: InterviewStatus.RESCHEDULED as any,
-      },
+      data: dataToUpdate,
     });
 
-    await this.auditService.log({
-      actorId: rescheduledById,
-      action: AuditActionType.INTERVIEW_RESCHEDULED,
-      entityType: 'Interview',
-      entityId: id,
-      beforeSnapshot: { scheduledStart: existing.scheduledStart },
-      afterSnapshot: { scheduledStart: start, reason },
-    });
+    if (rescheduledById) {
+      await this.auditService.log({
+        actorId: rescheduledById,
+        action: AuditActionType.INTERVIEW_RESCHEDULED,
+        entityType: 'Interview',
+        entityId: id,
+        beforeSnapshot: { scheduledStart: existing.scheduledStart },
+        afterSnapshot: { scheduledStart: start, reason },
+      });
+    }
 
     return updated;
   }

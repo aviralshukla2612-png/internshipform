@@ -44,6 +44,8 @@ export class InterviewsController {
     @Body('scheduledStart') scheduledStart: string,
     @Body('durationMinutes') durationMinutes: number,
     @Body('reason') reason: string,
+    @Body('meetingDetails') meetingDetails: string,
+    @Body('remarks') remarks: string,
     @CurrentUser('id') userId: string,
   ) {
     return this.interviewsService.rescheduleInterview(
@@ -52,6 +54,8 @@ export class InterviewsController {
       durationMinutes,
       userId,
       reason,
+      meetingDetails,
+      remarks,
     );
   }
 
