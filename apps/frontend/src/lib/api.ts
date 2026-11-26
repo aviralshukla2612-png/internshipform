@@ -92,36 +92,61 @@ export async function uploadDocument(
   file: File,
   documentType: string,
 ): Promise<{ storageKey: string; fileName: string; originalName: string }> {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("documentType", documentType);
-
   const base = getApiBaseUrl();
   const url = `${base}/documents/upload`;
 
   const token = getStoredToken();
   const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    credentials: "include",
-    body: formData,
-  });
+  let lastError: any = null;
+  const maxRetries = 2;
 
-  if (!response.ok) {
-    let errorData: any = {};
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      errorData = await response.json();
-    } catch {
-      errorData = { message: `Upload failed with status ${response.status}` };
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("documentType", documentType);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorData: any = {};
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `Upload failed with status ${response.status}` };
+        }
+        const message =
+          errorData?.error?.message ||
+          errorData?.message ||
+          `Upload failed with HTTP ${response.status}`;
+        throw new Error(Array.isArray(message) ? message.join(", ") : message);
+      }
+
+      return await response.json();
+    } catch (err: any) {
+      lastError = err;
+      // Do not retry on explicit HTTP/application validation errors from backend
+      if (err.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError")) {
+        throw err;
+      }
+      // Wait before retrying on network drops (600ms, then 1200ms)
+      if (attempt < maxRetries) {
+        await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 600));
+      }
     }
-    const message =
-      errorData?.error?.message ||
-      errorData?.message ||
-      `Upload failed with HTTP ${response.status}`;
-    throw new Error(Array.isArray(message) ? message.join(", ") : message);
   }
 
-  return response.json();
+  const isNetwork =
+    lastError?.message?.includes("Failed to fetch") ||
+    lastError?.message?.includes("Network");
+  const msg = isNetwork
+    ? "Network connection interrupted or upload timed out. Please check your internet connection and try uploading again."
+    : (lastError?.message || "Upload failed. Please try again.");
+  throw new Error(msg);
 }
