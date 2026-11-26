@@ -3,7 +3,8 @@ set -e
 
 echo "=== Deploying Emperor Smart Solutions Recruitment Platform to VPS ==="
 
-# 1. Pull latest code from GitHub
+# 1. Pull latest code from GitHub (discarding local deployment script edits if any)
+git checkout -- deploy.sh 2>/dev/null || true
 git pull origin main
 
 # 2. Update Nginx configuration & ensure 50M upload limit across HTTP & HTTPS
